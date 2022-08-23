@@ -10,6 +10,7 @@ This is a [QB64](https://github.com/QB64-Phoenix-Edition/QB64pe) compatible MIDI
 - Works with both 64-bit and 32-bit QB64 complier
 - Everything is statically linked (no DLL dependency, unlike [this](https://qb64phoenix.com/qb64wiki/index.php/DLL_Libraries))
 - Demo player that shows how to use the library
+- Contains a simple asyncronous WAV (ACM compressed) player too that supports looping. Great for background WAV music
 
 ## API
 
@@ -19,6 +20,8 @@ Function MIDI_IsPlaying%%
 Sub MIDI_Pause
 Sub MIDI_Resume
 Sub MIDI_SetVolume (ByVal volume As Single)
+Function MIDI_GetVolume!
+Function Sound_Play%% (fileName As String, Byval looping As Byte)
 ```
 
 ## Important note

@@ -619,6 +619,7 @@ static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DW
 /// This loads and starts playing a MIDI file.
 /// Specifying a new file while another one is playing will stop the previous file and then start playing the new one.
 /// The playback can be looped. The playback can be seemingly looped forever by specifying an absudly large value for 'loops'.
+/// Passing null as the filename will shutdown MIDI playback and free allocated resources.
 /// </summary>
 /// <param name="fileName">An SMF path file name</param>
 /// <param name="loops">The number of times the playback should loop</param>
@@ -636,7 +637,7 @@ int8_t MIDI_Play(const char *fileName, int loops)
 	if (!isMIDIAvailable)
 	{
 		isMIDIAvailableChecked = true;
-		
+
 		MMRESULT merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
 		if (merr != MMSYSERR_NOERROR)
 		{
@@ -768,8 +769,52 @@ void MIDI_SetVolume(float volume)
 	if (hMIDIStream)
 	{
 		volume = MIDI_CLAMP(volume, 0.0f, 1.0f);
-		int calcVolume = int(65535.0f * volume / 1.0f);
+		int calcVolume = int(65535.0f * volume);
 		midiOutSetVolume((HMIDIOUT)hMIDIStream, MAKELONG(calcVolume, calcVolume));
+	}
+}
+
+/// <summary>
+/// Returns the current MIDI volume
+/// </summary>
+/// <returns>A floating point value (0.0 to 1.0)</returns>
+float MIDI_GetVolume()
+{
+	DWORD dwVolume = 0xFFFF;
+
+	if (hMIDIStream)
+	{
+		if (midiOutGetVolume((HMIDIOUT)hMIDIStream, &dwVolume) == MMSYSERR_NOERROR)
+		{
+			dwVolume = LOWORD(dwVolume);
+		}
+		else
+		{
+			dwVolume = 0xFFFF;
+		}
+	}
+
+	return (float)dwVolume / 65535.0f;
+}
+
+/// <summary>
+/// This is a quick and dirty function to play simple single sounds asynchronously and can be great for playing looping music.
+/// This can playback WAV files that use compressed audio using Windows ACM codecs!
+/// Specifying a new file while another one is playing will stop the previous file and then start playing the new one.
+/// Specifying an empty string will stop all sound playback. The playback can be looped.
+/// </summary>
+/// <param name="fileName">A WAV path file name</param>
+/// <param name="looping">If this is true the sound loops forever until it is stopped</param>
+/// <returns>True if the call succeeded. False otherwise</returns>
+int8_t Sound_Play(const char *fileName, int8_t looping)
+{
+	if (MIDI_IS_STRING_EMPTY(fileName))
+	{
+		return PlaySound(NULL, NULL, 0) ? MIDI_TRUE : MIDI_FALSE;
+	}
+	else
+	{
+		return PlaySound(fileName, NULL, SND_ASYNC | SND_FILENAME | (looping ? SND_LOOP : 0) | SND_NODEFAULT) ? MIDI_TRUE : MIDI_FALSE;
 	}
 }
 //-----------------------------------------------------------------------------------------------------

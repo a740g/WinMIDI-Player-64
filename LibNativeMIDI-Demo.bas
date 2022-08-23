@@ -45,11 +45,14 @@ Do
     Print "THIS WAS WRITTEN IN QB64 AND THE SOURCE CODE IS AVAILABLE ON GITHUB."
     Print "https://github.com/a740g/QB64-LibNativeMIDI"
 
+    PlayWAV
+
     Do
         k = KeyHit
-        Limit 15
+        Limit 60
     Loop Until k <> 0 Or TotalDroppedFiles > 0
 
+    PlayWAV
     ProcessDroppedFiles
 Loop Until k = 27
 
@@ -82,6 +85,8 @@ Sub PlaySong (fileName As String)
     Dim As String minute, second, sPaused
     Dim k As Long, paused As Byte
 
+    MIDI_SetVolume Volume
+
     Do
         currentTime = Timer
         If startTime > currentTime Then startTime = startTime - 86400
@@ -91,7 +96,7 @@ Sub PlaySong (fileName As String)
         minute = Right$("00" + LTrim$(Str$(elapsedTime \ 60)), 2)
         second = Right$("00" + LTrim$(Str$(elapsedTime Mod 60)), 2)
         If paused Then sPaused = "Paused " Else sPaused = "Playing"
-        Print Using "Elapsed time: &:& (mm:ss) | Volume = ###% | &"; minute; second; Volume * 100; sPaused;
+        Print Using "Elapsed time: &:& (mm:ss) | Volume = ###.##% | &"; minute; second; Volume * 100; sPaused;
 
         k = KeyHit
 
@@ -105,17 +110,17 @@ Sub PlaySong (fileName As String)
                 End If
 
             Case 43, 61
-                Volume = Volume + 0.01
-                If Volume > 1 Then Volume = 1
+                Volume = Volume + 0.001
                 MIDI_SetVolume Volume
+                Volume = MIDI_GetVolume
 
             Case 45, 95
-                Volume = Volume - 0.01
-                If Volume < 0 Then Volume = 0
+                Volume = Volume - 0.001
                 MIDI_SetVolume Volume
+                Volume = MIDI_GetVolume
         End Select
 
-        Limit 15
+        Limit 60
     Loop Until Not MIDI_IsPlaying Or k = 27 Or TotalDroppedFiles > 0
 
     Print: Print "Done!"
@@ -125,6 +130,23 @@ Sub PlaySong (fileName As String)
     KeyClear
 
     Title APP_NAME + " " + OS$ ' Set app title to the way it was
+End Sub
+
+' Loops a demo WAV file in the background
+' Subsquent calls to this will stop playback
+Sub PlayWAV
+    Static isPlayed As Byte
+
+    If isPlayed Then
+        If Not Sound_Play(Chr$(0), FALSE) Then
+            Print: Print "Failed to stop backgound sound."
+        End If
+    Else
+        isPlayed = Sound_Play("RAINDROP.wav" + Chr$(0), TRUE)
+        If isPlayed Then
+            Print: Print "Looping MP3 compressed RAINDROP.wav..."
+        End If
+    End If
 End Sub
 
 ' Processes dropped files one file at a time
