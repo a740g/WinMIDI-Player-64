@@ -636,16 +636,17 @@ int8_t MIDI_Play(const char *fileName, int loops)
 	if (!isMIDIAvailable)
 	{
 		isMIDIAvailableChecked = true;
-		HMIDISTRM MIDIStream;
-		MMRESULT merr = midiStreamOpen(&MIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
+		
+		MMRESULT merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
 		if (merr != MMSYSERR_NOERROR)
 		{
-			midiStreamClose(MIDIStream);
+			midiStreamClose(hMIDIStream);
+			hMIDIStream = nullptr;
 			isMIDIAvailable = false;
 			return MIDI_FALSE;
 		}
 
-		midiStreamClose(MIDIStream);
+		// The MIDI steam will be closed by the if block below
 		isMIDIAvailable = true;
 	}
 
