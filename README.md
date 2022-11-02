@@ -28,7 +28,6 @@ Function Sound_Play%% (fileName As String, Byval looping As Byte)
 
 - Since the entire library is written using C, it expects null-terminated strings. Hence, always null-terminate `fileName` when using `MIDI_Play()`
 - Executing `MIDI_Play(Chr$(0), 0)` will shutdown the library. This should be done before the program ends
-- MIDI support will be built into [QB64-PE v3.1.0+](https://github.com/QB64-Phoenix-Edition/QB64pe).
-- The [miniaudio](https://miniaud.io/) backend in this version of OB64-PE uses [TinySoundFont](https://github.com/schellingb/TinySoundFont) and [TinyMidiLoader](https://github.com/schellingb/TinySoundFont)
-- So, this should be used when using older version of QB64-PE or when we want to eliminate the extra storage used by soundfonts
+- MIDI support is built into [QB64-PE v3.1.0+](https://github.com/QB64-Phoenix-Edition/QB64pe) using [TinySoundFont](https://github.com/schellingb/TinySoundFont) and [TinyMidiLoader](https://github.com/schellingb/TinySoundFont)
+- So, this should be used when using older version of QB64-PE / QB64 or when we want to eliminate the extra storage used by soundfonts
 - This works on Windows only
