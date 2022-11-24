@@ -54,7 +54,7 @@ Do
 
     PlayWAV
     ProcessDroppedFiles
-Loop Until k = 27
+Loop Until k = KEY_ESCAPE
 
 If MIDI_Play(Chr$(0), 0) Then
     Print: Print "LibNativeMIDI shutdown successfully."
@@ -101,7 +101,7 @@ Sub PlaySong (fileName As String)
         k = KeyHit
 
         Select Case k
-            Case 32
+            Case KEY_ENTER
                 paused = Not paused
                 If paused Then
                     MIDI_Pause
@@ -109,19 +109,19 @@ Sub PlaySong (fileName As String)
                     MIDI_Resume
                 End If
 
-            Case 43, 61
+            Case KEY_PLUS, KEY_EQUALS
                 Volume = Volume + 0.001
                 MIDI_SetVolume Volume
                 Volume = MIDI_GetVolume
 
-            Case 45, 95
+            Case KEY_MINUS, KEY_UNDERSCORE
                 Volume = Volume - 0.001
                 MIDI_SetVolume Volume
                 Volume = MIDI_GetVolume
         End Select
 
         Limit 60
-    Loop Until Not MIDI_IsPlaying Or k = 27 Or TotalDroppedFiles > 0
+    Loop Until Not MIDI_IsPlaying Or k = KEY_ESCAPE Or TotalDroppedFiles > 0
 
     Print: Print "Done!"
 
