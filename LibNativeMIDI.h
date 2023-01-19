@@ -2,13 +2,13 @@
 //
 //  MIDI Player library using Win32 WinMM MIDI streaming API
 //
-//  Copyright (c) 2022 Samuel Gomes
+//  Copyright (c) 2023 Samuel Gomes
 //  https://github.com/a740g
 //
 //  This uses a heavily modiified version of the Win32 native MIDI codec from SDL_mixer
 //  https://github.com/libsdl-org/SDL_mixer/blob/main/src/codecs/native_midi/native_midi_win32.c
 //
-//  native_midi:  Hardware Midi support for the SDL_mixer library
+//  native_midi: Hardware Midi support for the SDL_mixer library
 //  Copyright(C) 2000, 2001  Florian 'Proff' Schulze <florian.proff.schulze@gmx.net>
 //  This software is provided 'as-is', without any express or implied
 //  warranty.In no event will the authors be held liable for any damages
@@ -48,7 +48,7 @@
 //-----------------------------------------------------------------------------------------------------
 // MACROS
 //-----------------------------------------------------------------------------------------------------
-#define MIDI_IS_STRING_EMPTY(s) ((s) == nullptr || (s)[0] == 0)
+#define MIDI_IS_STRING_EMPTY(s) ((s) == nullptr || (s)[0] == NULL)
 #define MIDI_CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 /* Some macros that help us stay endianess-independant */
 #define MIDI_BE_SHORT(x) ((((x)&0xFF) << 8) | (((x) >> 8) & 0xFF))
@@ -568,7 +568,7 @@ static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DW
 /// <param name="fileName">An SMF path file name</param>
 /// <param name="loops">The number of times the playback should loop</param>
 /// <returns>True if the call succeeded. False otherwise</returns>
-int8_t MIDI_Play(const char *fileName, int loops) {
+int8_t __MIDI_Play(const char *fileName, int loops) {
     static bool isMIDIAvailable = false;
     static bool isMIDIAvailableChecked = false;
 
@@ -728,7 +728,7 @@ float MIDI_GetVolume() {
 /// <param name="fileName">A WAV path file name</param>
 /// <param name="looping">If this is true the sound loops forever until it is stopped</param>
 /// <returns>True if the call succeeded. False otherwise</returns>
-int8_t Sound_Play(const char *fileName, int8_t looping) {
+int8_t __Sound_Play(const char *fileName, int8_t looping) {
     if (MIDI_IS_STRING_EMPTY(fileName)) {
         return PlaySound(NULL, NULL, 0) ? MIDI_TRUE : MIDI_FALSE;
     } else {

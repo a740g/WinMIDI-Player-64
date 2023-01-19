@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------
 ' LibNativeMIDI Demo
-' Copyright (c) 2022 Samuel Gomes
+' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------
@@ -13,6 +13,14 @@
 ' CONSTANTS
 '-----------------------------------------------------------------------------------------------------
 Const APP_NAME = "LibNativeMIDI Player Demo"
+'-----------------------------------------------------------------------------------------------------
+
+'-----------------------------------------------------------------------------------------------------
+' EXTERNAL LIBRARIES
+'-----------------------------------------------------------------------------------------------------
+Declare CustomType Library
+    Function GetTicks~&& ' we use this for keeping track of elapsed time
+End Declare
 '-----------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------
@@ -56,7 +64,7 @@ Do
     ProcessDroppedFiles
 Loop Until k = KEY_ESCAPE
 
-If MIDI_Play(Chr$(0), 0) Then
+If MIDI_Play(Chr$(NULL), 0) Then
     Print: Print "LibNativeMIDI shutdown successfully."
 End If
 
@@ -69,10 +77,11 @@ End
 ' Initializes, loads and plays a MIDI file
 ' Also checks for input, shows info etc
 Sub PlaySong (fileName As String)
-    Dim As Single startTime, currentTime, elapsedTime
+    Dim As Unsigned Integer64 currentTick, lastTick, elapsedTicks
 
-    startTime = Timer
-    If Not MIDI_Play(fileName + Chr$(0), 1) Then ' We want the MIDI file to loop just once
+    lastTick = GetTicks
+
+    If Not MIDI_Play(fileName, 1) Then ' We want the MIDI file to loop just once
         Print: Print "Failed to load "; fileName; "!"
         Exit Sub
     End If
@@ -88,20 +97,21 @@ Sub PlaySong (fileName As String)
     MIDI_SetVolume Volume
 
     Do
-        currentTime = Timer
-        If startTime > currentTime Then startTime = startTime - 86400
-        elapsedTime = currentTime - startTime
+        currentTick = GetTicks
+        If currentTick > lastTick And Not paused Then elapsedTicks = elapsedTicks + (currentTick - lastTick)
+        lastTick = currentTick
 
         Locate , 1
-        minute = Right$("00" + LTrim$(Str$(elapsedTime \ 60)), 2)
-        second = Right$("00" + LTrim$(Str$(elapsedTime Mod 60)), 2)
+        minute = Right$("00" + LTrim$(Str$(elapsedTicks \ 60000)), 2)
+        second = Right$("00" + LTrim$(Str$((elapsedTicks Mod 60000) \ 1000)), 2)
         If paused Then sPaused = "Paused " Else sPaused = "Playing"
         Print Using "Elapsed time: &:& (mm:ss) | Volume = ###.##% | &"; minute; second; Volume * 100; sPaused;
+        'Print elapsedTicks; currentTick; lastTick;
 
         k = KeyHit
 
         Select Case k
-            Case KEY_ENTER
+            Case KEY_SPACE_BAR
                 paused = Not paused
                 If paused Then
                     MIDI_Pause
@@ -138,11 +148,11 @@ Sub PlayWAV
     Static isPlayed As Byte
 
     If isPlayed Then
-        If Not Sound_Play(Chr$(0), FALSE) Then
+        If Not Sound_Play(Chr$(NULL), FALSE) Then
             Print: Print "Failed to stop backgound sound."
         End If
     Else
-        isPlayed = Sound_Play("RAINDROP.wav" + Chr$(0), TRUE)
+        isPlayed = Sound_Play("RAINDROP.wav", TRUE)
         If isPlayed Then
             Print: Print "Looping MP3 compressed RAINDROP.wav..."
         End If
@@ -197,4 +207,11 @@ Function GetFileNameFromPath$ (pathName As String)
     End If
 End Function
 '-----------------------------------------------------------------------------------------------------
+
 '-----------------------------------------------------------------------------------------------------
+' MODULE FILES
+'-----------------------------------------------------------------------------------------------------
+'$Include:'./LibNativeMIDI.bas'
+'-----------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------
+
