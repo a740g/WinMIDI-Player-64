@@ -6,21 +6,15 @@
 '-----------------------------------------------------------------------------------------------------
 ' HEADER FILES
 '-----------------------------------------------------------------------------------------------------
-'$Include:'./LibNativeMIDI.bi'
+'$Include:'include/CRTLib.bi'
+'$Include:'include/FileOps.bi'
+'$Include:'include/WinMIDIPlayer.bi'
 '-----------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------
 ' CONSTANTS
 '-----------------------------------------------------------------------------------------------------
 Const APP_NAME = "LibNativeMIDI Player Demo"
-'-----------------------------------------------------------------------------------------------------
-
-'-----------------------------------------------------------------------------------------------------
-' EXTERNAL LIBRARIES
-'-----------------------------------------------------------------------------------------------------
-Declare CustomType Library
-    Function GetTicks~&& ' we use this for keeping track of elapsed time
-End Declare
 '-----------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------
@@ -87,9 +81,9 @@ Sub PlaySong (fileName As String)
     End If
 
     ' Set the app title to display the file name
-    Title APP_NAME + " - " + GetFileNameFromPath(fileName)
+    Title APP_NAME + " - " + GetFileNameFromPathOrURL(fileName)
 
-    Print: Print "Playing "; GetFileNameFromPath(fileName); " (press ESC to stop, SPC to pause, +/- for volume)..."
+    Print: Print "Playing "; GetFileNameFromPathOrURL(fileName); " (press ESC to stop, SPC to pause, +/- for volume)..."
 
     Dim As String minute, second, sPaused
     Dim k As Long, paused As Byte
@@ -189,29 +183,13 @@ Sub ProcessCommandLine
         If TotalDroppedFiles > 0 Then Exit For ' Exit the loop if we have dropped files
     Next
 End Sub
-
-' Gets the filename portion from a file path
-Function GetFileNameFromPath$ (pathName As String)
-    Dim i As Unsigned Long
-
-    ' Retrieve the position of the first / or \ in the parameter from the
-    For i = Len(pathName) To 1 Step -1
-        If Asc(pathName, i) = 47 Or Asc(pathName, i) = 92 Then Exit For
-    Next
-
-    ' Return the full string if pathsep was not found
-    If i = 0 Then
-        GetFileNameFromPath = pathName
-    Else
-        GetFileNameFromPath = Right$(pathName, Len(pathName) - i)
-    End If
-End Function
 '-----------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------
 ' MODULE FILES
 '-----------------------------------------------------------------------------------------------------
-'$Include:'./LibNativeMIDI.bas'
+'$Include:'include/FileOps.bas'
+'$Include:'include/WinMIDIPlayer.bas'
 '-----------------------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------------------
 
