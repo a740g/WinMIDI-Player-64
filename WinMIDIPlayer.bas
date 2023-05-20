@@ -26,6 +26,7 @@ Dim Shared Volume As Single
 '-----------------------------------------------------------------------------------------------------
 ' PROGRAM ENTRY POINT
 '-----------------------------------------------------------------------------------------------------
+$Console
 Title APP_NAME + " " + OS$ ' Set app title to the way it was
 ChDir StartDir$ ' Change to the directory specifed by the environment
 AcceptFileDrop ' Enable drag and drop of files
@@ -58,10 +59,6 @@ Do
     ProcessDroppedFiles
 Loop Until k = KEY_ESCAPE
 
-If MIDI_Play(Chr$(NULL), 0) Then
-    Print: Print "LibNativeMIDI shutdown successfully."
-End If
-
 End
 '-----------------------------------------------------------------------------------------------------
 
@@ -75,7 +72,7 @@ Sub PlaySong (fileName As String)
 
     lastTick = GetTicks
 
-    If Not MIDI_Play(fileName, 1) Then ' We want the MIDI file to loop just once
+    If Not MIDI_PlayFromFile(fileName) Then ' We want the MIDI file to loop just once
         Print: Print "Failed to load "; fileName; "!"
         Exit Sub
     End If
@@ -129,7 +126,7 @@ Sub PlaySong (fileName As String)
 
     Print: Print "Done!"
 
-    MIDI_Pause
+    MIDI_Stop
 
     KeyClear
 
@@ -142,11 +139,9 @@ Sub PlayWAV
     Static isPlayed As Byte
 
     If isPlayed Then
-        If Not Sound_Play(Chr$(NULL), FALSE) Then
-            Print: Print "Failed to stop backgound sound."
-        End If
+        Sound_Stop
     Else
-        isPlayed = Sound_Play("RAINDROP.wav", TRUE)
+        isPlayed = Sound_PlayFromFile("RAINDROP.wav", TRUE)
         If isPlayed Then
             Print: Print "Looping MP3 compressed RAINDROP.wav..."
         End If
