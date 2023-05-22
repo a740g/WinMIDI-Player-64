@@ -9,7 +9,7 @@ This is a [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe) compatible M
 
 - Easy plug-&-play API optimized for demos & games
 - Works with both 64-bit and 32-bit QB64-PE complier
-- Everything is statically linked (no DLL dependency, unlike [this](https://qb64phoenix.com/qb64wiki/index.php/DLL_Libraries))
+- Everything is statically linked (no DLL dependency; unlike [this](https://qb64phoenix.com/qb64wiki/index.php/DLL_Libraries))
 - Demo player that shows how to use the library
 - Contains a simple asyncronous .WAV (ACM compressed) player too that supports looping. Great for background .WAV music
 
@@ -54,6 +54,6 @@ Sub Sound_Stop
 - So, this should be used when we want to eliminate the extra storage used by soundfonts on Windows
 - I overhauled the player UI to test various other things in [Toolbox64](https://github.com/a740g/Toolbox64) to see if they all behave nicely together
 
-ASSETS
+## ASSETS
 
 - [Icon](https://www.iconarchive.com/artist/grafikartes.html) by [Paulo Freitas](https://behance.net/grafikartes)
