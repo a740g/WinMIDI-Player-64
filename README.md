@@ -1,4 +1,4 @@
-# WINMIDI PLAYER
+# WINMIDI PLAYER 64
 
 This is a [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe) compatible MIDI player library that uses [Win32 WinMM MIDI streaming APIs](https://docs.microsoft.com/en-us/windows/win32/api/mmeapi/).
 
