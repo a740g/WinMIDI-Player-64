@@ -265,7 +265,7 @@ Sub ShowAboutDialog
     Dim tunePaused As Byte
 
     If MIDI_IsPlaying And Not MIDI_IsPaused Then
-        MIDI_SetPause TRUE
+        MIDI_Pause TRUE
         tunePaused = TRUE
     End If
 
@@ -280,7 +280,7 @@ Sub ShowAboutDialog
 
     Sound_Stop
 
-    If tunePaused Then MIDI_SetPause FALSE
+    If tunePaused Then MIDI_Pause FALSE
 End Sub
 
 ' Initializes, loads and plays a MIDI file
@@ -324,10 +324,10 @@ Function PlayMIDITune~%% (fileName As String)
             Exit Do
 
         ElseIf WidgetClicked(UI.cmdPlayPause) Or InputManager.keyCode = KEY_UPPER_P Or InputManager.keyCode = KEY_LOWER_P Then
-            MIDI_SetPause Not MIDI_IsPaused
+            MIDI_Pause Not MIDI_IsPaused
 
         ElseIf WidgetClicked(UI.cmdRepeat) Or InputManager.keyCode = KEY_UPPER_L Or InputManager.keyCode = KEY_LOWER_L Then
-            MIDI_SetLooping Not MIDI_IsLooping
+            MIDI_Loop Not MIDI_IsLooping
 
         ElseIf WidgetClicked(UI.cmdIncVolume) Or InputManager.keyCode = KEY_PLUS Or InputManager.keyCode = KEY_EQUALS Then
             MIDIVolume = MIDIVolume + 0.01
