@@ -6,70 +6,70 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' HEADER FILES
 '-----------------------------------------------------------------------------------------------------------------------
-'$Include:'include/FileOps.bi'
-'$Include:'include/Base64.bi'
-'$Include:'include/ImGUI.bi'
-'$Include:'include/WinMIDIPlayer.bi'
-'$Include:'compactcassette.png.bi'
-'$Include:'raindrop.wav.bi'
+'$INCLUDE:'include/Colors.bi'
+'$INCLUDE:'include/FileOps.bi'
+'$INCLUDE:'include/Base64.bi'
+'$INCLUDE:'include/ImGUI.bi'
+'$INCLUDE:'include/WinMIDIPlayer.bi'
+'$INCLUDE:'compactcassette.png.bi'
+'$INCLUDE:'raindrop.wav.bi'
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' METACOMMANDS
 '-----------------------------------------------------------------------------------------------------------------------
-$NoPrefix
-$Color:32
-$Resize:Smooth
-$ExeIcon:'./WinMIDIPlayer64.ico'
-$VersionInfo:CompanyName=Samuel Gomes
-$VersionInfo:FileDescription=WinMIDI Player 64 executable
-$VersionInfo:InternalName=WinMIDIPlayer64
-$VersionInfo:LegalCopyright=Copyright (c) 2023, Samuel Gomes
-$VersionInfo:LegalTrademarks=All trademarks are property of their respective owners
-$VersionInfo:OriginalFilename=WinMIDIPlayer64.exe
-$VersionInfo:ProductName=WinMIDI Player 64
-$VersionInfo:Web=https://github.com/a740g
-$VersionInfo:Comments=https://github.com/a740g
-$VersionInfo:FILEVERSION#=2,0,0,0
-$VersionInfo:PRODUCTVERSION#=2,0,0,0
+$NOPREFIX
+$RESIZE:SMOOTH
+$EXEICON:'./WinMIDIPlayer64.ico'
+$VERSIONINFO:CompanyName=Samuel Gomes
+$VERSIONINFO:FileDescription=WinMIDI Player 64 executable
+$VERSIONINFO:InternalName=WinMIDIPlayer64
+$VERSIONINFO:LegalCopyright=Copyright (c) 2023, Samuel Gomes
+$VERSIONINFO:LegalTrademarks=All trademarks are property of their respective owners
+$VERSIONINFO:OriginalFilename=WinMIDIPlayer64.exe
+$VERSIONINFO:ProductName=WinMIDI Player 64
+$VERSIONINFO:Web=https://github.com/a740g
+$VERSIONINFO:Comments=https://github.com/a740g
+$VERSIONINFO:FILEVERSION#=2,0,1,0
+$VERSIONINFO:PRODUCTVERSION#=2,0,1,0
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' CONSTANTS
 '-----------------------------------------------------------------------------------------------------------------------
-Const APP_NAME = "WinMIDI Player 64"
-Const FRAME_RATE_MAX = 60
+CONST APP_NAME = "WinMIDI Player 64"
+CONST FRAME_RATE_MAX = 60
 ' Program events
-Const EVENT_NONE = 0 ' idle
-Const EVENT_QUIT = 1 ' user wants to quit
-Const EVENT_CMDS = 2 ' process command line
-Const EVENT_LOAD = 3 ' user want to load files
-Const EVENT_DROP = 4 ' user dropped files
-Const EVENT_PLAY = 5 ' play next song
+CONST EVENT_NONE = 0 ' idle
+CONST EVENT_QUIT = 1 ' user wants to quit
+CONST EVENT_CMDS = 2 ' process command line
+CONST EVENT_LOAD = 3 ' user want to load files
+CONST EVENT_DROP = 4 ' user dropped files
+CONST EVENT_PLAY = 5 ' play next song
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' USER DEFINED TYPES
 '-----------------------------------------------------------------------------------------------------------------------
-Type UIType ' bunch of UI widgets to change stuff
-    cmdOpen As Long ' open dialog box button
-    cmdPlayPause As Long ' play / pause button
-    cmdNext As Long ' next tune button
-    cmdIncVolume As Long ' increase volume button
-    cmdDecVolume As Long ' decrease volume button
-    cmdRepeat As Long ' repeat enable / disable button
-    cmdAbout As Long ' shows an about dialog
-End Type
+TYPE UIType ' bunch of UI widgets to change stuff
+    cmdOpen AS LONG ' open dialog box button
+    cmdPlayPause AS LONG ' play / pause button
+    cmdNext AS LONG ' next tune button
+    cmdIncVolume AS LONG ' increase volume button
+    cmdDecVolume AS LONG ' decrease volume button
+    cmdRepeat AS LONG ' repeat enable / disable button
+    cmdAbout AS LONG ' shows an about dialog
+END TYPE
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' GLOBAL VARIABLES
 '-----------------------------------------------------------------------------------------------------------------------
-Dim Shared MIDIVolume As Single ' global MIDI volume
-Dim Shared ElapsedTicks As Unsigned Integer64 ' amount of time spent in playing the current tune
-Dim Shared TuneTitle As String '  tune title
-Dim Shared BackgroundImage As Long ' the CC image that we will use for the background
-Dim Shared UI As UIType ' user interface controls
+DIM SHARED MIDIVolume AS SINGLE ' global MIDI volume
+DIM SHARED ElapsedTicks AS UNSIGNED INTEGER64 ' amount of time spent in playing the current tune
+DIM SHARED TuneTitle AS STRING '  tune title
+DIM SHARED BackgroundImage AS LONG ' the CC image that we will use for the background
+DIM SHARED UI AS UIType ' user interface controls
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
@@ -77,57 +77,58 @@ Dim Shared UI As UIType ' user interface controls
 '-----------------------------------------------------------------------------------------------------------------------
 InitProgram
 
-Dim event As Unsigned Byte: event = EVENT_CMDS ' default to command line event first
+DIM event AS BYTE: event = EVENT_CMDS ' default to command line event first
 
 ' Main loop
-Do
-    Select Case event
-        Case EVENT_QUIT
-            Exit Do
+DO
+    SELECT CASE event
+        CASE EVENT_QUIT
+            EXIT DO
 
-        Case EVENT_DROP
+        CASE EVENT_DROP
             event = ProcessDroppedFiles
 
-        Case EVENT_LOAD
-            event = ProcessSelectedFiles
+        CASE EVENT_LOAD
+            event = OnSelectedFiles
 
-        Case EVENT_CMDS
-            event = ProcessCommandLine
+        CASE EVENT_CMDS
+            event = OnCommandLine
 
-        Case Else
-            event = DoWelcomeScreen
-    End Select
-Loop Until event = EVENT_QUIT
+        CASE ELSE
+            event = OnWelcomeScreen
+    END SELECT
+LOOP UNTIL event = EVENT_QUIT
 
-AutoDisplay
+AUTODISPLAY
 WidgetFreeAll
-FreeImage BackgroundImage
-System
+FREEIMAGE BackgroundImage
+SYSTEM
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' FUNCTIONS & SUBROUTINES
 '-----------------------------------------------------------------------------------------------------------------------
 ' Initializes everything we need
-Sub InitProgram
-    Const BUTTON_WIDTH = 48 ' default button width
-    Const BUTTON_HEIGHT = 24 ' default button height
-    Const BUTTON_GAP = 4 ' default gap between buttons
-    Const BUTTON_Y = 172 ' default button top
+SUB InitProgram
+    CONST BUTTON_WIDTH = 48 ' default button width
+    CONST BUTTON_HEIGHT = 24 ' default button height
+    CONST BUTTON_GAP = 4 ' default gap between buttons
+    CONST BUTTON_Y = 172 ' default button top
 
-    Screen NewImage(320, 200, 32) ' like SCREEN 13 but in 32bpp
-    Title APP_NAME ' set default app title
-    ChDir StartDir$ ' change to the directory specifed by the environment
-    AcceptFileDrop ' enable drag and drop of files
-    AllowFullScreen SquarePixels , Smooth ' allow the user to press Alt+Enter to go fullscreen
-    Font 8 ' use 8x8 font by default
-    PrintMode KeepBackground ' set text rendering to preserve backgroud
+    SCREEN NEWIMAGE(320, 200, 32) ' like SCREEN 13 but in 32bpp
+    TITLE APP_NAME ' set default app title
+    CHDIR STARTDIR$ ' change to the directory specifed by the environment
+    ACCEPTFILEDROP ' enable drag and drop of files
+    ALLOWFULLSCREEN SQUAREPIXELS , SMOOTH ' allow the user to press Alt+Enter to go fullscreen
+    DISPLAYORDER HARDWARE , HARDWARE1 , GLRENDER , SOFTWARE ' draw the software stuff + text at the end
+    FONT 8 ' use 8x8 font by default
+    PRINTMODE KEEPBACKGROUND ' set text rendering to preserve backgroud
     ' Next 2 lines load the background, decodes, decompresses and loads it from memory to an image
-    Restore Data_compactcassette_png_46482
-    BackgroundImage = LoadImage(LoadResource, , "memory")
+    RESTORE Data_compactcassette_png_46482
+    BackgroundImage = LOADIMAGE(LoadResource, , "memory")
     MIDIVolume = 1 ' set initial volume at 100%
 
-    Dim buttonX As Long: buttonX = 32 ' this is where we will start
+    DIM buttonX AS LONG: buttonX = 32 ' this is where we will start
     UI.cmdOpen = PushButtonNew("Open", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, FALSE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
     UI.cmdPlayPause = PushButtonNew("Play", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, TRUE)
@@ -140,139 +141,155 @@ Sub InitProgram
     UI.cmdDecVolume = PushButtonNew("-V", 102, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, FALSE)
     UI.cmdIncVolume = PushButtonNew("+V", 192, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, FALSE)
 
-    Display ' only swap display buffer when we want
-End Sub
+    DISPLAY ' only swap display buffer when we want
+END SUB
+
 
 ' Weird plasma effect
-' This is slow AF. We should probably use a Sine LUT
-' But it is kinda ok for a 320x200 pix screen
-Sub DrawWeirdPlasma
-    Dim As Long x, y, r, g, b, r2, g2, b2, right, bottom, xs, ys
-    Static t As Long
+SUB DrawWeirdPlasma
+    CONST DIVIDER = 4
 
-    right = Width - 1
-    bottom = Height - 1
+    STATIC t AS LONG
 
-    For y = 0 To bottom Step 2
-        For x = xs To right Step 2
-            r = 128 + 127 * Sin(x / 16 - t / 20)
-            g = 128 + 127 * Sin(y / 16 - t / 22)
-            b = 128 + 127 * Sin((x + y) / 32 - t / 24)
-            r2 = 128 + 127 * Sin(y / 32 + t / 26)
-            g2 = 128 + 127 * Sin(x / 32 + t / 28)
-            b2 = 128 + 127 * Sin((x - y) / 32 + t / 30)
-            PSet (x, ys + y), ToBGRA((r + r2) \ 2, (g + g2) \ 2, (b + b2) \ 2, 255)
-            ys = 1 - ys
-        Next
-        xs = 1 - xs
-    Next
+    DIM buffer AS LONG: buffer = NEWIMAGE(WIDTH \ DIVIDER, HEIGHT \ DIVIDER, 32)
+    DIM memBuffer AS MEM: memBuffer = MEMIMAGE(buffer)
+    DIM W AS LONG: W = WIDTH(buffer)
+    DIM H AS LONG: H = HEIGHT(buffer)
+    DIM right AS LONG: right = W - 1
+    DIM bottom AS LONG: bottom = H - 1
+
+    DIM AS LONG x, y
+    DIM AS SINGLE r, g, b, r2, g2, b2
+
+    FOR y = 0 TO bottom
+        FOR x = 0 TO right
+            r = 128! + 127! * SIN(x / 16! - t / 20!)
+            g = 128! + 127! * SIN(y / 16! - t / 22!)
+            b = 128! + 127! * SIN((x + y) / 32! - t / 24!)
+            r2 = 128! + 127! * SIN(y / 32! + t / 26!)
+            g2 = 128! + 127! * SIN(x / 32! + t / 28!)
+            b2 = 128! + 127! * SIN((x - y) / 32! + t / 30!)
+
+            _MEMPUT memBuffer, memBuffer.OFFSET + (4 * W * y) + x * 4, ToBGRA((r + r2) / 2!, (g + g2) / 2!, (b + b2) / 2!, 255) AS _UNSIGNED LONG
+        NEXT
+    NEXT
+
+    DIM bufferGPU AS LONG: bufferGPU = COPYIMAGE(buffer, 33)
+    PUTIMAGE , bufferGPU
+    FREEIMAGE bufferGPU
+    MEMFREE memBuffer
+    FREEIMAGE buffer
 
     t = t + 1
-End Sub
+END SUB
+
 
 ' Draws one cassette reel
-Sub DrawReel (x As Long, y As Long, c As Unsigned Long, a As Single)
-    Static drawCmds As String, angle As Unsigned Long
+SUB DrawReel (x AS LONG, y AS LONG, c AS UNSIGNED LONG, a AS SINGLE)
+    STATIC drawCmds AS STRING, angle AS UNSIGNED LONG
 
-    drawCmds = "C" + Str$(c) + "BM" + Str$(x) + "," + Str$(y) + "TA=" + VarPtr$(angle) + "BU17L1D5R1U5"
+    drawCmds = "C" + STR$(c) + "BM" + STR$(x) + "," + STR$(y) + "TA=" + VARPTR$(angle) + "BU17L1D5R1U5"
 
     ' Faster without loop
     angle = a
-    Draw drawCmds
+    DRAW drawCmds
     angle = angle + 45
-    Draw drawCmds
+    DRAW drawCmds
     angle = angle + 45
-    Draw drawCmds
+    DRAW drawCmds
     angle = angle + 45
-    Draw drawCmds
+    DRAW drawCmds
     angle = angle + 45
-    Draw drawCmds
+    DRAW drawCmds
     angle = angle + 45
-    Draw drawCmds
+    DRAW drawCmds
     angle = angle + 45
-    Draw drawCmds
+    DRAW drawCmds
     angle = angle + 45
-    Draw drawCmds
-    Circle (x, y), 18, c
-End Sub
+    DRAW drawCmds
+    CIRCLE (x, y), 18, c
+END SUB
 
 
 ' Draws both reels at correct locations and manages rotation
-Sub DrawReels
-    Static angle As Unsigned Long
+SUB DrawReels
+    STATIC angle AS UNSIGNED LONG
 
-    DrawReel 95, 92, White, angle
-    DrawReel 223, 92, White, angle
+    DrawReel 95, 92, BGRA_WHITE, angle
+    DrawReel 223, 92, BGRA_WHITE, angle
 
-    If Not MIDI_IsPaused Then angle = angle + 1
-End Sub
+    IF NOT MIDI_IsPaused THEN angle = angle + 1
+END SUB
+
 
 ' Draws a frame around the CC
-Sub DrawFrame
-    Const FRAME_COLOR = RGBA32(0, 0, 0, 128)
+SUB DrawFrame
+    CONST FRAME_COLOR = RGBA32(0, 0, 0, 128)
 
-    Line (0, 0)-(319, 23), FRAME_COLOR, BF
-    Line (0, 167)-(319, 199), FRAME_COLOR, BF
-    Line (0, 24)-(31, 166), FRAME_COLOR, BF
-    Line (287, 24)-(319, 166), FRAME_COLOR, BF
-End Sub
+    LINE (0, 0)-(319, 23), FRAME_COLOR, BF
+    LINE (0, 167)-(319, 199), FRAME_COLOR, BF
+    LINE (0, 24)-(31, 166), FRAME_COLOR, BF
+    LINE (287, 24)-(319, 166), FRAME_COLOR, BF
+END SUB
+
 
 ' This draws everything to the screen
-Sub DrawScreen
-    Cls , Black
+SUB DrawScreen
+    CLS , 0 ' clear screen with black with no alpha
     DrawWeirdPlasma
-    PutImage , BackgroundImage
+    PUTIMAGE , BackgroundImage
     DrawReels
     DrawFrame
 
-    Dim text As String: text = Left$(TuneTitle, 28)
-    Font 14
-    Color Black
-    Locate 4, 7 + (14 - Len(text) \ 2)
-    Print text;
+    DIM text AS STRING: text = LEFT$(TuneTitle, 28)
+    FONT 14
+    COLOR BGRA_BLACK
+    LOCATE 4, 7 + (14 - LEN(text) \ 2)
+    PRINT text;
 
-    Dim minute As Unsigned Long: minute = ElapsedTicks \ 60000
-    Dim second As Unsigned Long: second = (ElapsedTicks Mod 60000) \ 1000
-    Color White
-    Locate 7, 18
-    Print Right$("00" + LTrim$(Str$(minute)), 3); ":"; Right$("00" + LTrim$(Str$(second)), 2);
+    DIM minute AS UNSIGNED LONG: minute = ElapsedTicks \ 60000
+    DIM second AS UNSIGNED LONG: second = (ElapsedTicks MOD 60000) \ 1000
+    COLOR BGRA_WHITE
+    LOCATE 7, 18
+    PRINT RIGHT$("00" + LTRIM$(STR$(minute)), 3); ":"; RIGHT$("00" + LTRIM$(STR$(second)), 2);
 
-    Font 16
-    Color Black
-    Locate 9, 19
-    Print Right$("  " + LTrim$(Str$(Round(MIDIVolume * 100))), 3); "%";
+    FONT 16
+    COLOR BGRA_BLACK
+    LOCATE 9, 19
+    PRINT RIGHT$("  " + LTRIM$(STR$(ROUND(MIDIVolume * 100))), 3); "%";
 
-    Font 8
-    Locate 14, 20
-    If MIDI_IsPaused Then
-        Color OrangeRed
-        Print String$(2, 179);
-    Else
-        Color Yellow
-        Print String$(2, 16);
-    End If
+    FONT 8
+    LOCATE 14, 20
+    IF MIDI_IsPaused THEN
+        COLOR BGRA_ORANGERED
+        PRINT STRING$(2, 179);
+    ELSE
+        COLOR BGRA_YELLOW
+        PRINT STRING$(2, 16);
+    END IF
 
-    WidgetDisabled UI.cmdPlayPause, Len(TuneTitle) = 0
-    WidgetDisabled UI.cmdNext, Len(TuneTitle) = 0
-    WidgetDisabled UI.cmdRepeat, Len(TuneTitle) = 0
-    PushButtonDepressed UI.cmdPlayPause, Not MIDI_IsPaused And Len(TuneTitle) <> 0
+    WidgetDisabled UI.cmdPlayPause, LEN(TuneTitle) = 0
+    WidgetDisabled UI.cmdNext, LEN(TuneTitle) = 0
+    WidgetDisabled UI.cmdRepeat, LEN(TuneTitle) = 0
+    PushButtonDepressed UI.cmdPlayPause, NOT MIDI_IsPaused AND LEN(TuneTitle) <> 0
     PushButtonDepressed UI.cmdRepeat, MIDI_IsLooping
 
     WidgetUpdate ' draw widgets above everything else. This also fetches input
 
-    Display ' flip the framebuffer
-End Sub
+    DISPLAY ' flip the framebuffer
+END SUB
+
 
 ' Shows the About dialog box
-Sub ShowAboutDialog
-    Dim tunePaused As Byte
+SUB ShowAboutDialog
+    DIM tunePaused AS BYTE
 
-    If MIDI_IsPlaying And Not MIDI_IsPaused Then
+    IF MIDI_IsPlaying AND NOT MIDI_IsPaused THEN
         MIDI_Pause TRUE
         tunePaused = TRUE
-    End If
+    END IF
 
-    Restore Data_raindrop_wav_482216
+    RESTORE Data_raindrop_wav_482216
     Sound_PlayFromMemory LoadResource, TRUE
 
     MessageBox APP_NAME, APP_NAME + String$(2, KEY_ENTER) + _
@@ -283,200 +300,198 @@ Sub ShowAboutDialog
 
     Sound_Stop
 
-    If tunePaused Then MIDI_Pause FALSE
-End Sub
+    IF tunePaused THEN MIDI_Pause FALSE
+END SUB
+
 
 ' Initializes, loads and plays a MIDI file
 ' Also checks for input, shows info etc
-Function PlayMIDITune~%% (fileName As String)
-    Shared InputManager As InputManagerType
+FUNCTION OnPlayMIDITune%% (fileName AS STRING)
+    SHARED InputManager AS InputManagerType
 
-    PlayMIDITune = EVENT_PLAY ' default event is to play next song
-    Dim As Unsigned Integer64 currentTick, lastTick
+    OnPlayMIDITune = EVENT_PLAY ' default event is to play next song
+    DIM AS UNSIGNED INTEGER64 currentTick, lastTick
 
     lastTick = GetTicks
 
-    If Not MIDI_PlayFromFile(fileName) Then ' We want the MIDI file to loop just once
-        MessageBox APP_NAME, "Failed to load: " + fileName, "error"
-        Exit Function
-    End If
+    IF NOT MIDI_PlayFromFile(fileName) THEN ' We want the MIDI file to loop just once
+        MESSAGEBOX APP_NAME, "Failed to load: " + fileName, "error"
+        EXIT FUNCTION
+    END IF
 
     ' Set the app title to display the file name
     TuneTitle = GetFileNameFromPathOrURL(fileName)
-    Title TuneTitle + " - " + APP_NAME ' show complete filename in the title
-    TuneTitle = Left$(TuneTitle, Len(TuneTitle) - Len(GetFileExtensionFromPathOrURL(TuneTitle))) ' get the file name without the extension
+    TITLE TuneTitle + " - " + APP_NAME ' show complete filename in the title
+    TuneTitle = LEFT$(TuneTitle, LEN(TuneTitle) - LEN(GetFileExtensionFromPathOrURL(TuneTitle))) ' get the file name without the extension
 
     MIDI_SetVolume MIDIVolume ' set the volume as Windows will reset the volume for new MIDI streams
 
-    Do
+    DO
         currentTick = GetTicks
-        If currentTick > lastTick And Not MIDI_IsPaused Then ElapsedTicks = ElapsedTicks + (currentTick - lastTick)
+        IF currentTick > lastTick AND NOT MIDI_IsPaused THEN ElapsedTicks = ElapsedTicks + (currentTick - lastTick)
         lastTick = currentTick
 
         DrawScreen
 
-        If WidgetClicked(UI.cmdNext) Or InputManager.keyCode = KEY_ESCAPE Or InputManager.keyCode = KEY_UPPER_N Or InputManager.keyCode = KEY_LOWER_N Then
-            Exit Do
+        IF WidgetClicked(UI.cmdNext) OR InputManager.keyCode = KEY_ESCAPE OR InputManager.keyCode = KEY_UPPER_N OR InputManager.keyCode = KEY_LOWER_N THEN
+            EXIT DO
 
-        ElseIf TotalDroppedFiles > 0 Then
-            PlayMIDITune = EVENT_DROP
-            Exit Do
+        ELSEIF TOTALDROPPEDFILES > 0 THEN
+            OnPlayMIDITune = EVENT_DROP
+            EXIT DO
 
-        ElseIf WidgetClicked(UI.cmdOpen) Or InputManager.keyCode = KEY_UPPER_O Or InputManager.keyCode = KEY_LOWER_O Then
-            PlayMIDITune = EVENT_LOAD
-            Exit Do
+        ELSEIF WidgetClicked(UI.cmdOpen) OR InputManager.keyCode = KEY_UPPER_O OR InputManager.keyCode = KEY_LOWER_O THEN
+            OnPlayMIDITune = EVENT_LOAD
+            EXIT DO
 
-        ElseIf WidgetClicked(UI.cmdPlayPause) Or InputManager.keyCode = KEY_UPPER_P Or InputManager.keyCode = KEY_LOWER_P Then
-            MIDI_Pause Not MIDI_IsPaused
+        ELSEIF WidgetClicked(UI.cmdPlayPause) OR InputManager.keyCode = KEY_UPPER_P OR InputManager.keyCode = KEY_LOWER_P THEN
+            MIDI_Pause NOT MIDI_IsPaused
 
-        ElseIf WidgetClicked(UI.cmdRepeat) Or InputManager.keyCode = KEY_UPPER_L Or InputManager.keyCode = KEY_LOWER_L Then
-            MIDI_Loop Not MIDI_IsLooping
+        ELSEIF WidgetClicked(UI.cmdRepeat) OR InputManager.keyCode = KEY_UPPER_L OR InputManager.keyCode = KEY_LOWER_L THEN
+            MIDI_Loop NOT MIDI_IsLooping
 
-        ElseIf WidgetClicked(UI.cmdIncVolume) Or InputManager.keyCode = KEY_PLUS Or InputManager.keyCode = KEY_EQUALS Then
+        ELSEIF WidgetClicked(UI.cmdIncVolume) OR InputManager.keyCode = KEY_PLUS OR InputManager.keyCode = KEY_EQUALS THEN
             MIDIVolume = MIDIVolume + 0.01
             MIDI_SetVolume MIDIVolume
             MIDIVolume = MIDI_GetVolume
 
-        ElseIf WidgetClicked(UI.cmdDecVolume) Or InputManager.keyCode = KEY_MINUS Or InputManager.keyCode = KEY_UNDERSCORE Then
+        ELSEIF WidgetClicked(UI.cmdDecVolume) OR InputManager.keyCode = KEY_MINUS OR InputManager.keyCode = KEY_UNDERSCORE THEN
             MIDIVolume = MIDIVolume - 0.01
             MIDI_SetVolume MIDIVolume
             MIDIVolume = MIDI_GetVolume
 
-        ElseIf WidgetClicked(UI.cmdAbout) Then
+        ELSEIF WidgetClicked(UI.cmdAbout) THEN
             ShowAboutDialog
 
-        ElseIf InputManager.keyCode = 21248 Then ' shift + delete - you know what this does :)
-            If MessageBox(APP_NAME, "Are you sure you want to delete " + fileName + " permanently?", "yesno", "question", 0) = 1 Then
-                Kill fileName
-                Exit Do
-            End If
+        ELSEIF InputManager.keyCode = 21248 THEN ' shift + delete - you know what this does :)
+            IF MESSAGEBOX(APP_NAME, "Are you sure you want to delete " + fileName + " permanently?", "yesno", "question", 0) = 1 THEN
+                KILL fileName
+                EXIT DO
+            END IF
 
-        End If
+        END IF
 
-        Limit FRAME_RATE_MAX
-    Loop Until Not MIDI_IsPlaying
+        LIMIT FRAME_RATE_MAX
+    LOOP UNTIL NOT MIDI_IsPlaying
 
     MIDI_Stop
 
     ' Clear these so that we do not keep showing dead info
-    TuneTitle = NULLSTRING
+    TuneTitle = EMPTY_STRING
     ElapsedTicks = NULL
 
-    Title APP_NAME ' set app title to the way it was
-End Function
+    TITLE APP_NAME ' set app title to the way it was
+END FUNCTION
 
 
 ' Welcome screen loop
-Function DoWelcomeScreen~%%
-    Shared InputManager As InputManagerType
+FUNCTION OnWelcomeScreen%%
+    SHARED InputManager AS InputManagerType
 
-    Dim e As Unsigned Byte: e = EVENT_NONE
+    DIM e AS BYTE: e = EVENT_NONE
 
-    Do
+    DO
         DrawScreen
 
-        If InputManager.keyCode = KEY_ESCAPE Then
+        IF InputManager.keyCode = KEY_ESCAPE THEN
             e = EVENT_QUIT
 
-        ElseIf TotalDroppedFiles > 0 Then
+        ELSEIF TOTALDROPPEDFILES > 0 THEN
             e = EVENT_DROP
 
-        ElseIf WidgetClicked(UI.cmdOpen) Or InputManager.keyCode = KEY_UPPER_O Or InputManager.keyCode = KEY_LOWER_O Then
+        ELSEIF WidgetClicked(UI.cmdOpen) OR InputManager.keyCode = KEY_UPPER_O OR InputManager.keyCode = KEY_LOWER_O THEN
             e = EVENT_LOAD
 
-        ElseIf WidgetClicked(UI.cmdIncVolume) Or InputManager.keyCode = KEY_PLUS Or InputManager.keyCode = KEY_EQUALS Then
+        ELSEIF WidgetClicked(UI.cmdIncVolume) OR InputManager.keyCode = KEY_PLUS OR InputManager.keyCode = KEY_EQUALS THEN
             MIDIVolume = MIDIVolume + 0.01
-            If MIDIVolume > 1 Then MIDIVolume = 1
+            IF MIDIVolume > 1 THEN MIDIVolume = 1
 
-        ElseIf WidgetClicked(UI.cmdDecVolume) Or InputManager.keyCode = KEY_MINUS Or InputManager.keyCode = KEY_UNDERSCORE Then
+        ELSEIF WidgetClicked(UI.cmdDecVolume) OR InputManager.keyCode = KEY_MINUS OR InputManager.keyCode = KEY_UNDERSCORE THEN
             MIDIVolume = MIDIVolume - 0.01
-            If MIDIVolume < 0 Then MIDIVolume = 0
+            IF MIDIVolume < 0 THEN MIDIVolume = 0
 
-        ElseIf WidgetClicked(UI.cmdAbout) Then
+        ELSEIF WidgetClicked(UI.cmdAbout) THEN
             ShowAboutDialog
 
-        End If
+        END IF
 
-        Limit FRAME_RATE_MAX
-    Loop While e = EVENT_NONE
+        LIMIT FRAME_RATE_MAX
+    LOOP WHILE e = EVENT_NONE
 
-    DoWelcomeScreen = e
-End Function
+    OnWelcomeScreen = e
+END FUNCTION
 
 
 ' Processes the command line one file at a time
-Function ProcessCommandLine~%%
-    Dim i As Unsigned Long
-    Dim e As Unsigned Byte: e = EVENT_NONE
+FUNCTION OnCommandLine%%
+    DIM e AS BYTE: e = EVENT_NONE
 
-    If GetProgramArgumentIndex(KEY_QUESTION_MARK) > 0 Then
+    IF GetProgramArgumentIndex(KEY_QUESTION_MARK) > 0 THEN
         ShowAboutDialog
         e = EVENT_QUIT
-    Else
-        For i = 1 To CommandCount
-            e = PlayMIDITune(Command$(i))
-            If e <> EVENT_PLAY Then Exit For
-        Next
-    End If
+    ELSE
+        DIM i AS LONG: FOR i = 1 TO COMMANDCOUNT
+            e = OnPlayMIDITune(COMMAND$(i))
+            IF e <> EVENT_PLAY THEN EXIT FOR
+        NEXT
+    END IF
 
-    ProcessCommandLine = e
-End Function
+    OnCommandLine = e
+END FUNCTION
 
 
 ' Processes dropped files one file at a time
-Function ProcessDroppedFiles~%%
+FUNCTION ProcessDroppedFiles%%
     ' Make a copy of the dropped file and clear the list
-    ReDim fileNames(1 To TotalDroppedFiles) As String
-    Dim i As Unsigned Long
-    Dim e As Unsigned Byte: e = EVENT_NONE
+    REDIM fileNames(1 TO TOTALDROPPEDFILES) AS STRING
 
-    For i = 1 To TotalDroppedFiles
-        fileNames(i) = DroppedFile(i)
-    Next
-    FinishDrop ' This is critical
+    DIM e AS BYTE: e = EVENT_NONE
+
+    DIM i AS LONG: FOR i = 1 TO TOTALDROPPEDFILES
+        fileNames(i) = DROPPEDFILE(i)
+    NEXT
+    FINISHDROP ' This is critical
 
     ' Now play the dropped file one at a time
-    For i = LBound(fileNames) To UBound(fileNames)
-        e = PlayMIDITune(fileNames(i))
-        If e <> EVENT_PLAY Then Exit For
-    Next
+    FOR i = LBOUND(fileNames) TO UBOUND(fileNames)
+        e = OnPlayMIDITune(fileNames(i))
+        IF e <> EVENT_PLAY THEN EXIT FOR
+    NEXT
 
     ProcessDroppedFiles = e
-End Function
+END FUNCTION
 
 
 ' Processes a list of files selected by the user
-Function ProcessSelectedFiles~%%
-    Dim ofdList As String
-    Dim e As Unsigned Byte: e = EVENT_NONE
+FUNCTION OnSelectedFiles%%
+    DIM ofdList AS STRING
+    DIM e AS BYTE: e = EVENT_NONE
 
-    ofdList = OpenFileDialog$(APP_NAME, , "*.mid|*.MID|*.Mid|*.midi|*.MIDI|*.Midi", "Standard MIDI Files", TRUE)
+    ofdList = OPENFILEDIALOG$(APP_NAME, , "*.mid|*.MID|*.Mid|*.midi|*.MIDI|*.Midi", "Standard MIDI Files", TRUE)
 
-    If ofdList = NULLSTRING Then Exit Function
+    IF ofdList = EMPTY_STRING THEN EXIT FUNCTION
 
-    ReDim fileNames(0 To 0) As String
-    Dim As Long i, j
+    REDIM fileNames(0 TO 0) AS STRING
 
-    j = TokenizeString(ofdList, "|", NULLSTRING, FALSE, fileNames())
+    DIM j AS LONG: j = TokenizeString(ofdList, "|", EMPTY_STRING, FALSE, fileNames())
 
-    For i = 0 To j - 1
-        e = PlayMIDITune(fileNames(i))
-        If e <> EVENT_PLAY Then Exit For
-    Next
+    DIM i AS LONG: FOR i = 0 TO j - 1
+        e = OnPlayMIDITune(fileNames(i))
+        IF e <> EVENT_PLAY THEN EXIT FOR
+    NEXT
 
-    ProcessSelectedFiles = e
-End Function
+    OnSelectedFiles = e
+END FUNCTION
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' MODULE FILES
 '-----------------------------------------------------------------------------------------------------------------------
-'$Include:'include/ProgramArgs.bas'
-'$Include:'include/FileOps.bas'
-'$Include:'include/StringOps.bas'
-'$Include:'include/Base64.bas'
-'$Include:'include/ImGUI.bas'
-'$Include:'include/WinMIDIPlayer.bas'
+'$INCLUDE:'include/ProgramArgs.bas'
+'$INCLUDE:'include/FileOps.bas'
+'$INCLUDE:'include/StringOps.bas'
+'$INCLUDE:'include/Base64.bas'
+'$INCLUDE:'include/ImGUI.bas'
+'$INCLUDE:'include/WinMIDIPlayer.bas'
 '-----------------------------------------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------------------------------------
-
