@@ -6,8 +6,9 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' HEADER FILES
 '-----------------------------------------------------------------------------------------------------------------------
-'$INCLUDE:'include/Colors.bi'
+'$INCLUDE:'include/ColorOps.bi'
 '$INCLUDE:'include/FileOps.bi'
+'$INCLUDE:'include/StringOps.bi'
 '$INCLUDE:'include/Base64.bi'
 '$INCLUDE:'include/ImGUI.bi'
 '$INCLUDE:'include/WinMIDIPlayer.bi'
@@ -125,7 +126,7 @@ SUB InitProgram
     PRINTMODE KEEPBACKGROUND ' set text rendering to preserve backgroud
     ' Next 2 lines load the background, decodes, decompresses and loads it from memory to an image
     RESTORE Data_compactcassette_png_46482
-    BackgroundImage = LOADIMAGE(LoadResource, , "memory")
+    BackgroundImage = LOADIMAGE(LoadResource, 33, "memory")
     MIDIVolume = 1 ' set initial volume at 100%
 
     DIM buttonX AS LONG: buttonX = 32 ' this is where we will start
@@ -186,12 +187,19 @@ END SUB
 
 ' Draws one cassette reel
 SUB DrawReel (x AS LONG, y AS LONG, c AS UNSIGNED LONG, a AS SINGLE)
-    STATIC drawCmds AS STRING, angle AS UNSIGNED LONG
+    STATIC drawCmds AS STRING, clr AS UNSIGNED LONG
+    STATIC AS LONG angle, xp, yp
 
-    drawCmds = "C" + STR$(c) + "BM" + STR$(x) + "," + STR$(y) + "TA=" + VARPTR$(angle) + "BU17L1D5R1U5"
-
-    ' Faster without loop
+    ' These must be copied to static variables for VARPTR$ to work correctly
     angle = a
+    xp = x
+    yp = y
+    clr = c
+
+    ' We'll setup the DRAW commands just once to a STATIC string
+    IF LEN(drawCmds) = 0 THEN drawCmds = "C=" + VARPTR$(clr) + "BM=" + VARPTR$(xp) + ",=" + VARPTR$(yp) + "TA=" + VARPTR$(angle) + "BU17L1D5R1U5"
+
+    ' Faster with unrolled loop
     DRAW drawCmds
     angle = angle + 45
     DRAW drawCmds
@@ -207,7 +215,7 @@ SUB DrawReel (x AS LONG, y AS LONG, c AS UNSIGNED LONG, a AS SINGLE)
     DRAW drawCmds
     angle = angle + 45
     DRAW drawCmds
-    CIRCLE (x, y), 18, c
+    CIRCLE (xp, yp), 18, clr
 END SUB
 
 
@@ -488,6 +496,7 @@ END FUNCTION
 ' MODULE FILES
 '-----------------------------------------------------------------------------------------------------------------------
 '$INCLUDE:'include/ProgramArgs.bas'
+'$INCLUDE:'include/ColorOps.bas'
 '$INCLUDE:'include/FileOps.bas'
 '$INCLUDE:'include/StringOps.bas'
 '$INCLUDE:'include/Base64.bas'
