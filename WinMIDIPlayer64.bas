@@ -31,8 +31,8 @@ $VERSIONINFO:OriginalFilename=WinMIDIPlayer64.exe
 $VERSIONINFO:ProductName=WinMIDI Player 64
 $VERSIONINFO:Web=https://github.com/a740g
 $VERSIONINFO:Comments=https://github.com/a740g
-$VERSIONINFO:FILEVERSION#=2,0,1,0
-$VERSIONINFO:PRODUCTVERSION#=2,0,1,0
+$VERSIONINFO:FILEVERSION#=2,0,2,0
+$VERSIONINFO:PRODUCTVERSION#=2,0,2,0
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
