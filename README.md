@@ -41,6 +41,7 @@ Sub Sound_PlayFromMemory (buffer As String, looping As Byte)
 Function Sound_PlayFromFile%% (fileName As String, looping As Byte)
 Sub Sound_PlayFromFile (fileName As String, looping As Byte)
 Sub Sound_Stop
+Sub Sound_Beep (dwFreq AS Unsigned Long, dwDuration AS Unsigned Long)
 ```
 
 ## NOTES
@@ -51,8 +52,7 @@ Sub Sound_Stop
 - When you clone a repository that contains submodules, the submodules are not automatically cloned by default
 - You will need to use the `git submodule update --init --recursive` to initialize, fetch and checkout git submodules
 - MIDI support is built into [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe/releases) using [TinySoundFont](https://github.com/schellingb/TinySoundFont) and [TinyMidiLoader](https://github.com/schellingb/TinySoundFont)
-- So, this should be used when we want to eliminate the extra storage used by soundfonts on Windows
-- I overhauled the player UI to test various other things in [Toolbox64](https://github.com/a740g/Toolbox64) to see if they all behave nicely together
+- This can be used when you want to eliminate the extra storage used by soundfonts on Windows
 
 ## ASSETS
 
