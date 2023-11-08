@@ -6,7 +6,7 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' HEADER FILES
 '-----------------------------------------------------------------------------------------------------------------------
-'$INCLUDE:'include/ColorOps.bi'
+'$INCLUDE:'include/GraphicOps.bi'
 '$INCLUDE:'include/FileOps.bi'
 '$INCLUDE:'include/StringOps.bi'
 '$INCLUDE:'include/Base64.bi'
@@ -22,17 +22,17 @@
 $NOPREFIX
 $RESIZE:SMOOTH
 $EXEICON:'./WinMIDIPlayer64.ico'
-$VERSIONINFO:CompanyName=Samuel Gomes
-$VERSIONINFO:FileDescription=WinMIDI Player 64 executable
-$VERSIONINFO:InternalName=WinMIDIPlayer64
-$VERSIONINFO:LegalCopyright=Copyright (c) 2023, Samuel Gomes
-$VERSIONINFO:LegalTrademarks=All trademarks are property of their respective owners
-$VERSIONINFO:OriginalFilename=WinMIDIPlayer64.exe
-$VERSIONINFO:ProductName=WinMIDI Player 64
-$VERSIONINFO:Web=https://github.com/a740g
-$VERSIONINFO:Comments=https://github.com/a740g
-$VERSIONINFO:FILEVERSION#=2,0,2,0
-$VERSIONINFO:PRODUCTVERSION#=2,0,2,0
+$VERSIONINFO:CompanyName='Samuel Gomes'
+$VERSIONINFO:FileDescription='WinMIDI Player 64 executable'
+$VERSIONINFO:InternalName='WinMIDIPlayer64'
+$VERSIONINFO:LegalCopyright='Copyright (c) 2023, Samuel Gomes'
+$VERSIONINFO:LegalTrademarks='All trademarks are property of their respective owners'
+$VERSIONINFO:OriginalFilename='WinMIDIPlayer64.exe'
+$VERSIONINFO:ProductName='WinMIDI Player 64'
+$VERSIONINFO:Web='https://github.com/a740g'
+$VERSIONINFO:Comments='https://github.com/a740g'
+$VERSIONINFO:FILEVERSION#=2,0,3,0
+$VERSIONINFO:PRODUCTVERSION#=2,0,3,0
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
@@ -126,7 +126,7 @@ SUB InitProgram
     PRINTMODE KEEPBACKGROUND ' set text rendering to preserve backgroud
     ' Next 2 lines load the background, decodes, decompresses and loads it from memory to an image
     RESTORE Data_compactcassette_png_46482
-    BackgroundImage = LOADIMAGE(LoadResource, 33, "memory")
+    BackgroundImage = LOADIMAGE(Base64_LoadResource, 33, "memory")
     MIDIVolume = 1 ' set initial volume at 100%
 
     DIM buttonX AS LONG: buttonX = 32 ' this is where we will start
@@ -171,7 +171,7 @@ SUB DrawWeirdPlasma
             g2 = 128! + 127! * SIN(x / 32! + t / 28!)
             b2 = 128! + 127! * SIN((x - y) / 32! + t / 30!)
 
-            _MEMPUT memBuffer, memBuffer.OFFSET + (4 * W * y) + x * 4, ToBGRA((r + r2) / 2!, (g + g2) / 2!, (b + b2) / 2!, 255) AS _UNSIGNED LONG
+            _MEMPUT memBuffer, memBuffer.OFFSET + (4 * W * y) + x * 4, Graphics_MakeBGRA((r + r2) / 2!, (g + g2) / 2!, (b + b2) / 2!, 255) AS _UNSIGNED LONG
         NEXT
     NEXT
 
@@ -215,7 +215,7 @@ SUB DrawReel (x AS LONG, y AS LONG, c AS UNSIGNED LONG, a AS SINGLE)
     DRAW drawCmds
     angle = angle + 45
     DRAW drawCmds
-    CIRCLE (xp, yp), 18, clr
+    Graphics_DrawCircle xp, yp, 18, clr
 END SUB
 
 
@@ -234,10 +234,10 @@ END SUB
 SUB DrawFrame
     CONST FRAME_COLOR = RGBA32(0, 0, 0, 128)
 
-    LINE (0, 0)-(319, 23), FRAME_COLOR, BF
-    LINE (0, 167)-(319, 199), FRAME_COLOR, BF
-    LINE (0, 24)-(31, 166), FRAME_COLOR, BF
-    LINE (287, 24)-(319, 166), FRAME_COLOR, BF
+    Graphics_DrawFilledRectangle 0, 0, 319, 23, FRAME_COLOR
+    Graphics_DrawFilledRectangle 0, 167, 319, 199, FRAME_COLOR
+    Graphics_DrawFilledRectangle 0, 24, 31, 166, FRAME_COLOR
+    Graphics_DrawFilledRectangle 287, 24, 319, 166, FRAME_COLOR
 END SUB
 
 
@@ -298,7 +298,7 @@ SUB ShowAboutDialog
     END IF
 
     RESTORE Data_raindrop_wav_482216
-    Sound_PlayFromMemory LoadResource, TRUE
+    Sound_PlayFromMemory Base64_LoadResource, TRUE
 
     MessageBox APP_NAME, APP_NAME + String$(2, KEY_ENTER) + _
         "Syntax: WinMIDIPlayer64 [-?] [midifile1.mid] [midifile2.mid] ..." + Chr$(KEY_ENTER) + _
@@ -320,7 +320,7 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     OnPlayMIDITune = EVENT_PLAY ' default event is to play next song
     DIM AS UNSIGNED INTEGER64 currentTick, lastTick
 
-    lastTick = GetTicks
+    lastTick = Time_GetTicks
 
     IF NOT MIDI_PlayFromFile(fileName) THEN ' We want the MIDI file to loop just once
         MESSAGEBOX APP_NAME, "Failed to load: " + fileName, "error"
@@ -335,7 +335,7 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     MIDI_SetVolume MIDIVolume ' set the volume as Windows will reset the volume for new MIDI streams
 
     DO
-        currentTick = GetTicks
+        currentTick = Time_GetTicks
         IF currentTick > lastTick AND NOT MIDI_IsPaused THEN ElapsedTicks = ElapsedTicks + (currentTick - lastTick)
         lastTick = currentTick
 
@@ -496,7 +496,7 @@ END FUNCTION
 ' MODULE FILES
 '-----------------------------------------------------------------------------------------------------------------------
 '$INCLUDE:'include/ProgramArgs.bas'
-'$INCLUDE:'include/ColorOps.bas'
+'$INCLUDE:'include/GraphicOps.bas'
 '$INCLUDE:'include/FileOps.bas'
 '$INCLUDE:'include/StringOps.bas'
 '$INCLUDE:'include/Base64.bas'
