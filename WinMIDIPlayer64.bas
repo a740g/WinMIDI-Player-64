@@ -126,7 +126,7 @@ SUB InitProgram
     PRINTMODE KEEPBACKGROUND ' set text rendering to preserve backgroud
     ' Next 2 lines load the background, decodes, decompresses and loads it from memory to an image
     RESTORE Data_compactcassette_png_46482
-    BackgroundImage = LOADIMAGE(Base64_LoadResource, 33, "memory")
+    BackgroundImage = LOADIMAGE(Base64_LoadResourceData, 33, "memory")
     MIDIVolume = 1 ' set initial volume at 100%
 
     DIM buttonX AS LONG: buttonX = 32 ' this is where we will start
@@ -298,7 +298,7 @@ SUB ShowAboutDialog
     END IF
 
     RESTORE Data_raindrop_wav_482216
-    Sound_PlayFromMemory Base64_LoadResource, TRUE
+    Sound_PlayFromMemory Base64_LoadResourceData, TRUE
 
     MessageBox APP_NAME, APP_NAME + String$(2, KEY_ENTER) + _
         "Syntax: WinMIDIPlayer64 [-?] [midifile1.mid] [midifile2.mid] ..." + Chr$(KEY_ENTER) + _
