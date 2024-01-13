@@ -385,7 +385,7 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     MIDI_Stop
 
     ' Clear these so that we do not keep showing dead info
-    TuneTitle = EMPTY_STRING
+    TuneTitle = STRING_EMPTY
     ElapsedTicks = NULL
 
     TITLE APP_NAME ' set app title to the way it was
@@ -477,11 +477,11 @@ FUNCTION OnSelectedFiles%%
 
     ofdList = OPENFILEDIALOG$(APP_NAME, , "*.mid|*.MID|*.Mid|*.midi|*.MIDI|*.Midi", "Standard MIDI Files", TRUE)
 
-    IF ofdList = EMPTY_STRING THEN EXIT FUNCTION
+    IF LEN(ofdList) = NULL THEN EXIT FUNCTION
 
     REDIM fileNames(0 TO 0) AS STRING
 
-    DIM j AS LONG: j = TokenizeString(ofdList, "|", EMPTY_STRING, FALSE, fileNames())
+    DIM j AS LONG: j = String_Tokenize(ofdList, "|", STRING_EMPTY, FALSE, fileNames())
 
     DIM i AS LONG: FOR i = 0 TO j - 1
         e = OnPlayMIDITune(fileNames(i))
