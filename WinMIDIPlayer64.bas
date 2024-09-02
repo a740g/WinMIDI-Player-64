@@ -148,40 +148,57 @@ END SUB
 
 ' Weird plasma effect
 SUB DrawWeirdPlasma
-    CONST DIVIDER = 4
+    $CHECKING:OFF
 
-    STATIC t AS LONG
+    CONST __WP_DIV = 4
 
-    DIM buffer AS LONG: buffer = NEWIMAGE(WIDTH \ DIVIDER, HEIGHT \ DIVIDER, 32)
-    DIM memBuffer AS MEM: memBuffer = MEMIMAGE(buffer)
-    DIM W AS LONG: W = WIDTH(buffer)
-    DIM H AS LONG: H = HEIGHT(buffer)
-    DIM right AS LONG: right = W - 1
-    DIM bottom AS LONG: bottom = H - 1
+    STATIC AS LONG w, h, t, imgHandle
+    STATIC imgMem AS _MEM
+
+    DIM rW AS LONG: rW = _WIDTH \ __WP_DIV
+    DIM rH AS LONG: rH = _HEIGHT \ __WP_DIV
+
+    IF w <> rW _ORELSE h <> rH _ORELSE imgHandle >= -1 THEN
+        IF imgHandle < -1 THEN
+            _FREEIMAGE imgHandle
+            _MEMFREE imgMem
+        END IF
+
+        imgHandle = _NEWIMAGE(rW, rH, 32)
+        imgMem = _MEMIMAGE(imgHandle)
+        w = rW
+        h = rH
+    END IF
 
     DIM AS LONG x, y
-    DIM AS SINGLE r, g, b, r2, g2, b2
+    DIM AS SINGLE r1, g1, b1, r2, g2, b2
 
-    FOR y = 0 TO bottom
-        FOR x = 0 TO right
-            r = 128! + 127! * SIN(x / 16! - t / 20!)
-            g = 128! + 127! * SIN(y / 16! - t / 22!)
-            b = 128! + 127! * SIN((x + y) / 32! - t / 24!)
-            r2 = 128! + 127! * SIN(y / 32! + t / 26!)
-            g2 = 128! + 127! * SIN(x / 32! + t / 28!)
-            b2 = 128! + 127! * SIN((x - y) / 32! + t / 30!)
+    WHILE y < h
+        x = 0
+        g1 = 128! * SIN(y / 16! - t / 22!)
+        r2 = 128! * SIN(y / 32! + t / 26!)
 
-            _MEMPUT memBuffer, memBuffer.OFFSET + (4 * W * y) + x * 4, Graphics_MakeBGRA((r + r2) / 2!, (g + g2) / 2!, (b + b2) / 2!, 255) AS _UNSIGNED LONG
-        NEXT
-    NEXT
+        WHILE x < w
+            r1 = 128! * SIN(x / 16! - t / 20!)
+            b1 = 128! * SIN((x + y) / 32! - t / 24!)
+            g2 = 128! * SIN(x / 32! + t / 28!)
+            b2 = 128! * SIN((x - y) / 32! + t / 30!)
 
-    DIM bufferGPU AS LONG: bufferGPU = COPYIMAGE(buffer, 33)
-    PUTIMAGE , bufferGPU
-    FREEIMAGE bufferGPU
-    MEMFREE memBuffer
-    FREEIMAGE buffer
+            _MEMPUT imgMem, imgMem.OFFSET + (4 * w * y) + x * 4, _RGB32((r1 + r2) / 2!, (g1 + g2) / 2!, (b1 + b2) / 2!) AS _UNSIGNED LONG
+
+            x = x + 1
+        WEND
+
+        y = y + 1
+    WEND
+
+    DIM imgGPUHandle AS LONG: imgGPUHandle = _COPYIMAGE(imgHandle, 33)
+    _PUTIMAGE , imgGPUHandle
+    _FREEIMAGE imgGPUHandle
 
     t = t + 1
+
+    $CHECKING:ON
 END SUB
 
 
