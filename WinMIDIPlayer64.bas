@@ -28,8 +28,8 @@ $VERSIONINFO:OriginalFilename='WinMIDIPlayer64.exe'
 $VERSIONINFO:ProductName='WinMIDI Player 64'
 $VERSIONINFO:Web='https://github.com/a740g'
 $VERSIONINFO:Comments='https://github.com/a740g'
-$VERSIONINFO:FILEVERSION#=2,0,4,0
-$VERSIONINFO:PRODUCTVERSION#=2,0,4,0
+$VERSIONINFO:FILEVERSION#=2,0,5,0
+$VERSIONINFO:PRODUCTVERSION#=2,0,5,0
 $EXEICON:'./WinMIDIPlayer64.ico'
 '-----------------------------------------------------------------------------------------------------------------------
 
@@ -128,17 +128,17 @@ SUB InitProgram
     MIDIVolume = 1 ' set initial volume at 100%
 
     DIM buttonX AS LONG: buttonX = 32 ' this is where we will start
-    UI.cmdOpen = PushButtonNew("Open", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, FALSE)
+    UI.cmdOpen = PushButtonNew("Open", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
-    UI.cmdPlayPause = PushButtonNew("Play", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, TRUE)
+    UI.cmdPlayPause = PushButtonNew("Play", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _TRUE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
-    UI.cmdNext = PushButtonNew("Next", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, FALSE)
+    UI.cmdNext = PushButtonNew("Next", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
-    UI.cmdRepeat = PushButtonNew("Loop", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, TRUE)
+    UI.cmdRepeat = PushButtonNew("Loop", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _TRUE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
-    UI.cmdAbout = PushButtonNew("About", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, FALSE)
-    UI.cmdDecVolume = PushButtonNew("-V", 102, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, FALSE)
-    UI.cmdIncVolume = PushButtonNew("+V", 192, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, FALSE)
+    UI.cmdAbout = PushButtonNew("About", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
+    UI.cmdDecVolume = PushButtonNew("-V", 102, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, _FALSE)
+    UI.cmdIncVolume = PushButtonNew("+V", 192, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, _FALSE)
 
     _DISPLAY ' only swap display buffer when we want
 END SUB
@@ -294,7 +294,7 @@ SUB DrawScreen
     WidgetDisabled UI.cmdPlayPause, LEN(TuneTitle) = 0
     WidgetDisabled UI.cmdNext, LEN(TuneTitle) = 0
     WidgetDisabled UI.cmdRepeat, LEN(TuneTitle) = 0
-    PushButtonDepressed UI.cmdPlayPause, NOT MIDI_IsPaused AND LEN(TuneTitle) <> 0
+    PushButtonDepressed UI.cmdPlayPause, NOT MIDI_IsPaused _ANDALSO LEN(TuneTitle) <> 0
     PushButtonDepressed UI.cmdRepeat, MIDI_IsLooping
 
     WidgetUpdate ' draw widgets above everything else. This also fetches input
@@ -307,23 +307,23 @@ END SUB
 SUB ShowAboutDialog
     DIM tunePaused AS _BYTE
 
-    IF MIDI_IsPlaying AND NOT MIDI_IsPaused THEN
-        MIDI_Pause TRUE
-        tunePaused = TRUE
+    IF MIDI_IsPlaying _ANDALSO NOT MIDI_IsPaused THEN
+        MIDI_Pause _TRUE
+        tunePaused = _TRUE
     END IF
 
     RESTORE data_raindrop_wav_bi_482216
-    Sound_PlayFromMemory Base64_LoadResourceData, TRUE
+    Sound_PlayFromMemory Base64_LoadResourceData, _TRUE
 
-    _MESSAGEBOX APP_NAME, APP_NAME + STRING$(2, KEY_ENTER) + _
-        "Syntax: WinMIDIPlayer64 [-?] [midifile1.mid] [midifile2.mid] ..." + CHR$(KEY_ENTER) + _
-        "    -?: Shows this message" + STRING$(2, KEY_ENTER) + _
-        "Copyright (c) 2024, Samuel Gomes" + STRING$(2, KEY_ENTER) + _
+    _MESSAGEBOX APP_NAME, APP_NAME + STRING$(2, _CHR_LF) + _
+        "Syntax: WinMIDIPlayer64 [-?] [midifile1.mid] [midifile2.mid] ..." + _CHR_LF + _
+        "    -?: Shows this message" + STRING$(2, _CHR_LF) + _
+        "Copyright (c) 2024, Samuel Gomes" + STRING$(2, _CHR_LF) + _
         "https://github.com/a740g/", "info"
 
     Sound_Stop
 
-    IF tunePaused THEN MIDI_Pause FALSE
+    IF tunePaused THEN MIDI_Pause _FALSE
 END SUB
 
 
@@ -351,34 +351,34 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
 
     DO
         currentTick = Time_GetTicks
-        IF currentTick > lastTick AND NOT MIDI_IsPaused THEN ElapsedTicks = ElapsedTicks + (currentTick - lastTick)
+        IF currentTick > lastTick _ANDALSO NOT MIDI_IsPaused THEN ElapsedTicks = ElapsedTicks + (currentTick - lastTick)
         lastTick = currentTick
 
         DrawScreen
 
-        IF WidgetClicked(UI.cmdNext) OR InputManager.keyCode = KEY_ESCAPE OR InputManager.keyCode = KEY_UPPER_N OR InputManager.keyCode = KEY_LOWER_N THEN
+        IF WidgetClicked(UI.cmdNext) _ORELSE InputManager.keyCode = _KEY_ESC _ORELSE InputManager.keyCode = KEY_UPPER_N _ORELSE InputManager.keyCode = KEY_LOWER_N THEN
             EXIT DO
 
         ELSEIF _TOTALDROPPEDFILES > 0 THEN
             OnPlayMIDITune = EVENT_DROP
             EXIT DO
 
-        ELSEIF WidgetClicked(UI.cmdOpen) OR InputManager.keyCode = KEY_UPPER_O OR InputManager.keyCode = KEY_LOWER_O THEN
+        ELSEIF WidgetClicked(UI.cmdOpen) _ORELSE InputManager.keyCode = KEY_UPPER_O _ORELSE InputManager.keyCode = KEY_LOWER_O THEN
             OnPlayMIDITune = EVENT_LOAD
             EXIT DO
 
-        ELSEIF WidgetClicked(UI.cmdPlayPause) OR InputManager.keyCode = KEY_UPPER_P OR InputManager.keyCode = KEY_LOWER_P THEN
+        ELSEIF WidgetClicked(UI.cmdPlayPause) _ORELSE InputManager.keyCode = KEY_UPPER_P _ORELSE InputManager.keyCode = KEY_LOWER_P THEN
             MIDI_Pause NOT MIDI_IsPaused
 
-        ELSEIF WidgetClicked(UI.cmdRepeat) OR InputManager.keyCode = KEY_UPPER_L OR InputManager.keyCode = KEY_LOWER_L THEN
+        ELSEIF WidgetClicked(UI.cmdRepeat) _ORELSE InputManager.keyCode = KEY_UPPER_L _ORELSE InputManager.keyCode = KEY_LOWER_L THEN
             MIDI_Loop NOT MIDI_IsLooping
 
-        ELSEIF WidgetClicked(UI.cmdIncVolume) OR InputManager.keyCode = KEY_PLUS OR InputManager.keyCode = KEY_EQUALS THEN
+        ELSEIF WidgetClicked(UI.cmdIncVolume) _ORELSE InputManager.keyCode = KEY_PLUS _ORELSE InputManager.keyCode = KEY_EQUALS THEN
             MIDIVolume = MIDIVolume + 0.01
             MIDI_SetVolume MIDIVolume
             MIDIVolume = MIDI_GetVolume
 
-        ELSEIF WidgetClicked(UI.cmdDecVolume) OR InputManager.keyCode = KEY_MINUS OR InputManager.keyCode = KEY_UNDERSCORE THEN
+        ELSEIF WidgetClicked(UI.cmdDecVolume) _ORELSE InputManager.keyCode = KEY_MINUS _ORELSE InputManager.keyCode = KEY_UNDERSCORE THEN
             MIDIVolume = MIDIVolume - 0.01
             MIDI_SetVolume MIDIVolume
             MIDIVolume = MIDI_GetVolume
@@ -400,7 +400,7 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     MIDI_Stop
 
     ' Clear these so that we do not keep showing dead info
-    TuneTitle = STRING_EMPTY
+    TuneTitle = _STR_EMPTY
     ElapsedTicks = NULL
 
     _TITLE APP_NAME ' set app title to the way it was
@@ -416,20 +416,20 @@ FUNCTION OnWelcomeScreen%%
     DO
         DrawScreen
 
-        IF InputManager.keyCode = KEY_ESCAPE THEN
+        IF InputManager.keyCode = _KEY_ESC THEN
             e = EVENT_QUIT
 
         ELSEIF _TOTALDROPPEDFILES > 0 THEN
             e = EVENT_DROP
 
-        ELSEIF WidgetClicked(UI.cmdOpen) OR InputManager.keyCode = KEY_UPPER_O OR InputManager.keyCode = KEY_LOWER_O THEN
+        ELSEIF WidgetClicked(UI.cmdOpen) _ORELSE InputManager.keyCode = KEY_UPPER_O _ORELSE InputManager.keyCode = KEY_LOWER_O THEN
             e = EVENT_LOAD
 
-        ELSEIF WidgetClicked(UI.cmdIncVolume) OR InputManager.keyCode = KEY_PLUS OR InputManager.keyCode = KEY_EQUALS THEN
+        ELSEIF WidgetClicked(UI.cmdIncVolume) _ORELSE InputManager.keyCode = KEY_PLUS _ORELSE InputManager.keyCode = KEY_EQUALS THEN
             MIDIVolume = MIDIVolume + 0.01
             IF MIDIVolume > 1 THEN MIDIVolume = 1
 
-        ELSEIF WidgetClicked(UI.cmdDecVolume) OR InputManager.keyCode = KEY_MINUS OR InputManager.keyCode = KEY_UNDERSCORE THEN
+        ELSEIF WidgetClicked(UI.cmdDecVolume) _ORELSE InputManager.keyCode = KEY_MINUS _ORELSE InputManager.keyCode = KEY_UNDERSCORE THEN
             MIDIVolume = MIDIVolume - 0.01
             IF MIDIVolume < 0 THEN MIDIVolume = 0
 
@@ -490,13 +490,13 @@ FUNCTION OnSelectedFiles%%
     DIM ofdList AS STRING
     DIM e AS _BYTE: e = EVENT_NONE
 
-    ofdList = _OPENFILEDIALOG$(APP_NAME, , "*.mid|*.MID|*.Mid|*.midi|*.MIDI|*.Midi", "Standard MIDI Files", TRUE)
+    ofdList = _OPENFILEDIALOG$(APP_NAME, , "*.mid|*.MID|*.Mid|*.midi|*.MIDI|*.Midi", "Standard MIDI Files", _TRUE)
 
     IF LEN(ofdList) = NULL THEN EXIT FUNCTION
 
     REDIM fileNames(0 TO 0) AS STRING
 
-    DIM j AS LONG: j = String_Tokenize(ofdList, "|", STRING_EMPTY, FALSE, fileNames())
+    DIM j AS LONG: j = String_Tokenize(ofdList, "|", _STR_EMPTY, _FALSE, fileNames())
 
     DIM i AS LONG: FOR i = 0 TO j - 1
         e = OnPlayMIDITune(fileNames(i))
