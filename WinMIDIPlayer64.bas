@@ -1,5 +1,5 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' QB64-PE Windows MIDI Player
+' QB64-PE MIDI Player
 ' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
@@ -9,9 +9,8 @@
 '$INCLUDE:'include/GraphicOps.bi'
 '$INCLUDE:'include/Pathname.bi'
 '$INCLUDE:'include/StringOps.bi'
-'$INCLUDE:'include/Base64.bi'
 '$INCLUDE:'include/ImGUI.bi'
-'$INCLUDE:'include/WinMIDIPlayer.bi'
+'$INCLUDE:'include/MIDIPlayer.bi'
 '$INCLUDE:'compactcassette.png.bi'
 '$INCLUDE:'raindrop.wav.bi'
 '-----------------------------------------------------------------------------------------------------------------------
@@ -64,8 +63,6 @@ END TYPE
 '-----------------------------------------------------------------------------------------------------------------------
 ' GLOBAL VARIABLES
 '-----------------------------------------------------------------------------------------------------------------------
-DIM SHARED MIDIVolume AS SINGLE ' global MIDI volume
-DIM SHARED ElapsedTicks AS _UNSIGNED _INTEGER64 ' amount of time spent in playing the current tune
 DIM SHARED TuneTitle AS STRING '  tune title
 DIM SHARED BackgroundImage AS LONG ' the CC image that we will use for the background
 DIM SHARED UI AS UIType ' user interface controls
@@ -125,7 +122,6 @@ SUB InitProgram
     _PRINTMODE _KEEPBACKGROUND ' set text rendering to preserve backgroud
     ' Decode, decompress, and load the background from memory to an image
     BackgroundImage = _LOADIMAGE(Base64_LoadResourceString(DATA_COMPACTCASSETTE_PNG_BI_42837, SIZE_COMPACTCASSETTE_PNG_BI_42837, COMP_COMPACTCASSETTE_PNG_BI_42837), 33, "memory")
-    MIDIVolume = 1 ' set initial volume at 100%
 
     DIM buttonX AS LONG: buttonX = 32 ' this is where we will start
     UI.cmdOpen = PushButtonNew("Open", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
@@ -270,8 +266,8 @@ SUB DrawScreen
     LOCATE 4, 7 + (14 - LEN(text) \ 2)
     PRINT text;
 
-    DIM minute AS _UNSIGNED LONG: minute = ElapsedTicks \ 60000
-    DIM second AS _UNSIGNED LONG: second = (ElapsedTicks MOD 60000) \ 1000
+    DIM minute AS _UNSIGNED LONG: minute = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime / 60)
+    DIM second AS _UNSIGNED LONG: second = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime MOD 60)
     COLOR BGRA_WHITE
     LOCATE 7, 18
     PRINT RIGHT$("00" + LTRIM$(STR$(minute)), 3); ":"; RIGHT$("00" + LTRIM$(STR$(second)), 2);
@@ -279,7 +275,7 @@ SUB DrawScreen
     _FONT 16
     COLOR BGRA_BLACK
     LOCATE 9, 19
-    PRINT RIGHT$("  " + LTRIM$(STR$(_ROUND(MIDIVolume * 100))), 3); "%";
+    PRINT String_FormatDouble(MIDI_GetVolume * 100#, "%3.0f%%");
 
     _FONT 8
     LOCATE 14, 20
@@ -313,7 +309,12 @@ SUB ShowAboutDialog
     END IF
 
     RESTORE data_raindrop_wav_bi_482216
-    Sound_PlayFromMemory Base64_LoadResourceData, _TRUE
+    DIM hSnd AS LONG: hSnd = _SNDOPEN(Base64_LoadResourceData, "memory")
+
+    IF hSnd THEN
+        _SNDVOL hSnd, 0.25!
+        _SNDLOOP hSnd
+    END IF
 
     _MESSAGEBOX APP_NAME, APP_NAME + STRING$(2, _CHR_LF) + _
         "Syntax: WinMIDIPlayer64 [-?] [midifile1.mid] [midifile2.mid] ..." + _CHR_LF + _
@@ -321,7 +322,10 @@ SUB ShowAboutDialog
         "Copyright (c) 2024, Samuel Gomes" + STRING$(2, _CHR_LF) + _
         "https://github.com/a740g/", "info"
 
-    Sound_Stop
+    IF hSnd THEN
+        _SNDSTOP hSnd
+        _SNDCLOSE hSnd
+    END IF
 
     IF tunePaused THEN MIDI_Pause _FALSE
 END SUB
@@ -333,9 +337,6 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     SHARED InputManager AS InputManagerType
 
     OnPlayMIDITune = EVENT_PLAY ' default event is to play next song
-    DIM AS _UNSIGNED _INTEGER64 currentTick, lastTick
-
-    lastTick = Time_GetTicks
 
     IF NOT MIDI_PlayFromFile(fileName) THEN ' We want the MIDI file to loop just once
         _MESSAGEBOX APP_NAME, "Failed to load: " + fileName, "error"
@@ -347,13 +348,7 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     _TITLE TuneTitle + " - " + APP_NAME ' show complete filename in the title
     TuneTitle = LEFT$(TuneTitle, LEN(TuneTitle) - LEN(Pathname_GetFileExtension(TuneTitle))) ' get the file name without the extension
 
-    MIDI_SetVolume MIDIVolume ' set the volume as Windows will reset the volume for new MIDI streams
-
     DO
-        currentTick = Time_GetTicks
-        IF currentTick > lastTick _ANDALSO NOT MIDI_IsPaused THEN ElapsedTicks = ElapsedTicks + (currentTick - lastTick)
-        lastTick = currentTick
-
         DrawScreen
 
         IF WidgetClicked(UI.cmdNext) _ORELSE InputManager.keyCode = _KEY_ESC _ORELSE InputManager.keyCode = KEY_UPPER_N _ORELSE InputManager.keyCode = KEY_LOWER_N THEN
@@ -374,14 +369,10 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
             MIDI_Loop NOT MIDI_IsLooping
 
         ELSEIF WidgetClicked(UI.cmdIncVolume) _ORELSE InputManager.keyCode = KEY_PLUS _ORELSE InputManager.keyCode = KEY_EQUALS THEN
-            MIDIVolume = MIDIVolume + 0.01
-            MIDI_SetVolume MIDIVolume
-            MIDIVolume = MIDI_GetVolume
+            MIDI_SetVolume MIDI_GetVolume + 0.01!
 
         ELSEIF WidgetClicked(UI.cmdDecVolume) _ORELSE InputManager.keyCode = KEY_MINUS _ORELSE InputManager.keyCode = KEY_UNDERSCORE THEN
-            MIDIVolume = MIDIVolume - 0.01
-            MIDI_SetVolume MIDIVolume
-            MIDIVolume = MIDI_GetVolume
+            MIDI_SetVolume MIDI_GetVolume - 0.01!
 
         ELSEIF WidgetClicked(UI.cmdAbout) THEN
             ShowAboutDialog
@@ -391,7 +382,6 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
                 KILL fileName
                 EXIT DO
             END IF
-
         END IF
 
         _LIMIT FRAME_RATE_MAX
@@ -401,7 +391,6 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
 
     ' Clear these so that we do not keep showing dead info
     TuneTitle = _STR_EMPTY
-    ElapsedTicks = NULL
 
     _TITLE APP_NAME ' set app title to the way it was
 END FUNCTION
@@ -426,12 +415,10 @@ FUNCTION OnWelcomeScreen%%
             e = EVENT_LOAD
 
         ELSEIF WidgetClicked(UI.cmdIncVolume) _ORELSE InputManager.keyCode = KEY_PLUS _ORELSE InputManager.keyCode = KEY_EQUALS THEN
-            MIDIVolume = MIDIVolume + 0.01
-            IF MIDIVolume > 1 THEN MIDIVolume = 1
+            MIDI_SetVolume MIDI_GetVolume + 0.01!
 
         ELSEIF WidgetClicked(UI.cmdDecVolume) _ORELSE InputManager.keyCode = KEY_MINUS _ORELSE InputManager.keyCode = KEY_UNDERSCORE THEN
-            MIDIVolume = MIDIVolume - 0.01
-            IF MIDIVolume < 0 THEN MIDIVolume = 0
+            MIDI_SetVolume MIDI_GetVolume - 0.01!
 
         ELSEIF WidgetClicked(UI.cmdAbout) THEN
             ShowAboutDialog
@@ -516,6 +503,6 @@ END FUNCTION
 '$INCLUDE:'include/StringOps.bas'
 '$INCLUDE:'include/Base64.bas'
 '$INCLUDE:'include/ImGUI.bas'
-'$INCLUDE:'include/WinMIDIPlayer.bas'
+'$INCLUDE:'include/MIDIPlayer.bas'
 '-----------------------------------------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------------------------------------
