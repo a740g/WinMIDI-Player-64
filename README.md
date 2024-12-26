@@ -18,7 +18,7 @@
 1. Clone this repository to a directory of your choice:
 
     ```bash
-    git clone https://github.com/a740g/MIDIPlayer64.git
+    git clone https://github.com/a740g/MIDI-Player-64.git
     cd MIDIPlayer64
     ```
 
