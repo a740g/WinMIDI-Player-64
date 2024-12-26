@@ -27,8 +27,8 @@ $VERSIONINFO:OriginalFilename='WinMIDIPlayer64.exe'
 $VERSIONINFO:ProductName='WinMIDI Player 64'
 $VERSIONINFO:Web='https://github.com/a740g'
 $VERSIONINFO:Comments='https://github.com/a740g'
-$VERSIONINFO:FILEVERSION#=2,0,5,0
-$VERSIONINFO:PRODUCTVERSION#=2,0,5,0
+$VERSIONINFO:FILEVERSION#=3,0,0,0
+$VERSIONINFO:PRODUCTVERSION#=3,0,0,0
 $EXEICON:'./WinMIDIPlayer64.ico'
 '-----------------------------------------------------------------------------------------------------------------------
 
@@ -36,14 +36,59 @@ $EXEICON:'./WinMIDIPlayer64.ico'
 ' CONSTANTS
 '-----------------------------------------------------------------------------------------------------------------------
 CONST APP_NAME = "WinMIDI Player 64"
-CONST FRAME_RATE_MAX = 60
+
+CONST SCREEN_WIDTH& = 640&
+CONST SCREEN_HEIGHT& = 400&
+
+CONST FRAME_COLOR~& = _RGBA32(0, 0, 0, 128)
+CONST FRAME_BORDER_WIDTH_X& = 48&
+CONST FRAME_BORDER_WIDTH_Y& = 64&
+
+CONST BUTTON_FONT& = 14&
+CONST BUTTON_WIDTH& = 96&
+CONST BUTTON_HEIGHT& = 32&
+CONST BUTTON_GAP& = 8&
+CONST BUTTON_COUNT& = 5&
+CONST BUTTON_X& = SCREEN_WIDTH \ 2& - (BUTTON_WIDTH * BUTTON_COUNT + BUTTON_GAP * (BUTTON_COUNT - 1)) \ 2&
+CONST BUTTON_Y& = SCREEN_HEIGHT - (FRAME_BORDER_WIDTH_X + BUTTON_HEIGHT) \ 2&
+
+CONST VOLUME_TEXT_X& = (SCREEN_WIDTH - 4& * 8&) \ 2&
+CONST VOLUME_TEXT_Y& = (SCREEN_HEIGHT \ 2&) + (BUTTON_FONT * 4&)
+
+CONST BUTTON_VOLUME_M_X& = VOLUME_TEXT_X - BUTTON_GAP * 2& - BUTTON_HEIGHT
+CONST BUTTON_VOLUME_P_X& = VOLUME_TEXT_X + 4& * 8& + BUTTON_GAP * 2&
+CONST BUTTON_VOLUME_Y& = VOLUME_TEXT_Y - (BUTTON_HEIGHT - BUTTON_FONT) \ 2&
+
+CONST REEL_COLOR~& = BGRA_WHITE
+CONST REEL_RADIUS& = 37&
+CONST REEL_LEFT_X& = 190&
+CONST REEL_RIGHT_X& = 446&
+CONST REEL_Y& = 184&
+
+CONST WP_DIV& = 8&
+CONST WP_WIDTH& = SCREEN_WIDTH \ WP_DIV
+CONST WP_HEIGHT& = SCREEN_HEIGHT \ WP_DIV
+
+CONST TITLE_WIDTH& = SCREEN_WIDTH - FRAME_BORDER_WIDTH_Y * 3&
+CONST TITLE_CHARS& = TITLE_WIDTH \ 8&
+CONST TITLE_X& = (FRAME_BORDER_WIDTH_Y * 3&) \ 2&
+CONST TITLE_Y& = BUTTON_FONT * 2& + FRAME_BORDER_WIDTH_X
+
+CONST TIME_X& = (SCREEN_WIDTH - 13& * 8&) \ 2&
+CONST TIME_Y& = (SCREEN_HEIGHT \ 2&) - (BUTTON_FONT * 2&)
+
+CONST PLAY_ICON_X& = (SCREEN_WIDTH - 1& * 8&) \ 2&
+CONST PLAY_ICON_Y& = (SCREEN_HEIGHT \ 2&)
+
+CONST FRAME_RATE_MAX& = 60&
+
 ' Program events
-CONST EVENT_NONE = 0 ' idle
-CONST EVENT_QUIT = 1 ' user wants to quit
-CONST EVENT_CMDS = 2 ' process command line
-CONST EVENT_LOAD = 3 ' user want to load files
-CONST EVENT_DROP = 4 ' user dropped files
-CONST EVENT_PLAY = 5 ' play next song
+CONST EVENT_NONE%% = 0%% ' idle
+CONST EVENT_QUIT%% = 1%% ' user wants to quit
+CONST EVENT_CMDS%% = 2%% ' process command line
+CONST EVENT_LOAD%% = 3%% ' user want to load files
+CONST EVENT_DROP%% = 4%% ' user dropped files
+CONST EVENT_PLAY%% = 5%% ' play next song
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
@@ -106,24 +151,20 @@ SYSTEM
 '-----------------------------------------------------------------------------------------------------------------------
 ' Initializes everything we need
 SUB InitProgram
-    CONST BUTTON_WIDTH = 48 ' default button width
-    CONST BUTTON_HEIGHT = 24 ' default button height
-    CONST BUTTON_GAP = 4 ' default gap between buttons
-    CONST BUTTON_Y = 172 ' default button top
-
     $RESIZE:SMOOTH
-    SCREEN _NEWIMAGE(320, 200, 32) ' like SCREEN 13 but in 32bpp
+    SCREEN _NEWIMAGE(SCREEN_WIDTH, SCREEN_HEIGHT, 32)
     _TITLE APP_NAME ' set default app title
     CHDIR _STARTDIR$ ' change to the directory specifed by the environment
     _ACCEPTFILEDROP ' enable drag and drop of files
     _ALLOWFULLSCREEN _SQUAREPIXELS , _SMOOTH ' allow the user to press Alt+Enter to go fullscreen
     _DISPLAYORDER _HARDWARE , _HARDWARE1 , _GLRENDER , _SOFTWARE ' draw the software stuff + text at the end
-    _FONT 8 ' use 8x8 font by default
     _PRINTMODE _KEEPBACKGROUND ' set text rendering to preserve backgroud
-    ' Decode, decompress, and load the background from memory to an image
-    BackgroundImage = _LOADIMAGE(Base64_LoadResourceString(DATA_COMPACTCASSETTE_PNG_BI_42837, SIZE_COMPACTCASSETTE_PNG_BI_42837, COMP_COMPACTCASSETTE_PNG_BI_42837), 33, "memory")
+    _FONT BUTTON_FONT
 
-    DIM buttonX AS LONG: buttonX = 32 ' this is where we will start
+    ' Decode, decompress, and load the background from memory to an image
+    BackgroundImage = _LOADIMAGE(Base64_LoadResourceString(DATA_COMPACTCASSETTE_PNG_BI_42837, SIZE_COMPACTCASSETTE_PNG_BI_42837, COMP_COMPACTCASSETTE_PNG_BI_42837), 33, "memory, hq2xb")
+
+    DIM buttonX AS LONG: buttonX = BUTTON_X ' this is where we will start
     UI.cmdOpen = PushButtonNew("Open", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
     UI.cmdPlayPause = PushButtonNew("Play", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _TRUE)
@@ -133,8 +174,8 @@ SUB InitProgram
     UI.cmdRepeat = PushButtonNew("Loop", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _TRUE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
     UI.cmdAbout = PushButtonNew("About", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
-    UI.cmdDecVolume = PushButtonNew("-V", 102, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, _FALSE)
-    UI.cmdIncVolume = PushButtonNew("+V", 192, 124, BUTTON_HEIGHT, BUTTON_HEIGHT, _FALSE)
+    UI.cmdDecVolume = PushButtonNew("-V", BUTTON_VOLUME_M_X, BUTTON_VOLUME_Y, BUTTON_HEIGHT, BUTTON_HEIGHT, _FALSE)
+    UI.cmdIncVolume = PushButtonNew("+V", BUTTON_VOLUME_P_X, BUTTON_VOLUME_Y, BUTTON_HEIGHT, BUTTON_HEIGHT, _FALSE)
 
     _DISPLAY ' only swap display buffer when we want
 END SUB
@@ -144,13 +185,11 @@ END SUB
 SUB DrawWeirdPlasma
     $CHECKING:OFF
 
-    CONST __WP_DIV = 4
-
     STATIC AS LONG w, h, t, imgHandle
     STATIC imgMem AS _MEM
 
-    DIM rW AS LONG: rW = _WIDTH \ __WP_DIV
-    DIM rH AS LONG: rH = _HEIGHT \ __WP_DIV
+    DIM rW AS LONG: rW = WP_WIDTH
+    DIM rH AS LONG: rH = WP_HEIGHT
 
     IF w <> rW _ORELSE h <> rH _ORELSE imgHandle >= -1 THEN
         IF imgHandle < -1 THEN
@@ -168,7 +207,7 @@ SUB DrawWeirdPlasma
     DIM AS SINGLE r1, g1, b1, r2, g2, b2
 
     WHILE y < h
-        x = 0
+        x = 0&
         g1 = 128! * SIN(y / 16! - t / 22!)
         r2 = 128! * SIN(y / 32! + t / 26!)
 
@@ -178,26 +217,26 @@ SUB DrawWeirdPlasma
             g2 = 128! * SIN(x / 32! + t / 28!)
             b2 = 128! * SIN((x - y) / 32! + t / 30!)
 
-            _MEMPUT imgMem, imgMem.OFFSET + (4 * w * y) + x * 4, _RGB32((r1 + r2) / 2!, (g1 + g2) / 2!, (b1 + b2) / 2!) AS _UNSIGNED LONG
+            _MEMPUT imgMem, imgMem.OFFSET + (4& * w * y) + x * 4&, _RGB32((r1 + r2) / 2!, (g1 + g2) / 2!, (b1 + b2) / 2!) AS _UNSIGNED LONG
 
-            x = x + 1
+            x = x + 1&
         WEND
 
-        y = y + 1
+        y = y + 1&
     WEND
 
     DIM imgGPUHandle AS LONG: imgGPUHandle = _COPYIMAGE(imgHandle, 33)
     _PUTIMAGE , imgGPUHandle
     _FREEIMAGE imgGPUHandle
 
-    t = t + 1
+    t = t + 1&
 
     $CHECKING:ON
 END SUB
 
 
 ' Draws one cassette reel
-SUB DrawReel (x AS LONG, y AS LONG, c AS _UNSIGNED LONG, a AS SINGLE)
+SUB DrawReel (x AS LONG, y AS LONG, a AS SINGLE)
     STATIC drawCmds AS STRING, clr AS _UNSIGNED LONG
     STATIC AS LONG angle, xp, yp
 
@@ -205,10 +244,10 @@ SUB DrawReel (x AS LONG, y AS LONG, c AS _UNSIGNED LONG, a AS SINGLE)
     angle = a
     xp = x
     yp = y
-    clr = c
+    clr = REEL_COLOR
 
     ' We'll setup the DRAW commands just once to a STATIC string
-    IF LEN(drawCmds) = 0 THEN drawCmds = "C=" + VARPTR$(clr) + "BM=" + VARPTR$(xp) + ",=" + VARPTR$(yp) + "TA=" + VARPTR$(angle) + "BU17L1D5R1U5"
+    IF LEN(drawCmds) = 0 THEN drawCmds = "C=" + VARPTR$(clr) + "BM=" + VARPTR$(xp) + ",=" + VARPTR$(yp) + "TA=" + VARPTR$(angle) + "BU35BR1D10L1U10L1D10"
 
     ' Faster with unrolled loop
     DRAW drawCmds
@@ -226,7 +265,8 @@ SUB DrawReel (x AS LONG, y AS LONG, c AS _UNSIGNED LONG, a AS SINGLE)
     DRAW drawCmds
     angle = angle + 45
     DRAW drawCmds
-    Graphics_DrawCircle xp, yp, 18, clr
+    Graphics_DrawCircle xp, yp, REEL_RADIUS, clr
+    Graphics_DrawCircle xp, yp, REEL_RADIUS - 1, clr
 END SUB
 
 
@@ -234,21 +274,19 @@ END SUB
 SUB DrawReels
     STATIC angle AS _UNSIGNED LONG
 
-    DrawReel 95, 92, BGRA_WHITE, angle
-    DrawReel 223, 92, BGRA_WHITE, angle
+    DrawReel REEL_LEFT_X, REEL_Y, angle
+    DrawReel REEL_RIGHT_X, REEL_Y, angle
 
     IF NOT MIDI_IsPaused THEN angle = angle + 1
 END SUB
 
 
-' Draws a frame around the CC
+' Draws a frame around the screen
 SUB DrawFrame
-    CONST FRAME_COLOR = _RGBA32(0, 0, 0, 128)
-
-    Graphics_DrawFilledRectangle 0, 0, 319, 23, FRAME_COLOR
-    Graphics_DrawFilledRectangle 0, 167, 319, 199, FRAME_COLOR
-    Graphics_DrawFilledRectangle 0, 24, 31, 166, FRAME_COLOR
-    Graphics_DrawFilledRectangle 287, 24, 319, 166, FRAME_COLOR
+    Graphics_DrawFilledRectangle 0, 0, SCREEN_WIDTH - 1, FRAME_BORDER_WIDTH_X - 1, FRAME_COLOR
+    Graphics_DrawFilledRectangle 0, SCREEN_HEIGHT - FRAME_BORDER_WIDTH_X, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, FRAME_COLOR
+    Graphics_DrawFilledRectangle 0, FRAME_BORDER_WIDTH_X, FRAME_BORDER_WIDTH_Y - 1, SCREEN_HEIGHT - FRAME_BORDER_WIDTH_X - 1, FRAME_COLOR
+    Graphics_DrawFilledRectangle SCREEN_WIDTH - FRAME_BORDER_WIDTH_Y, FRAME_BORDER_WIDTH_X, SCREEN_WIDTH - 1, SCREEN_HEIGHT - FRAME_BORDER_WIDTH_X - 1, FRAME_COLOR
 END SUB
 
 
@@ -260,31 +298,28 @@ SUB DrawScreen
     DrawReels
     DrawFrame
 
-    DIM text AS STRING: text = LEFT$(TuneTitle, 28)
-    _FONT 14
-    COLOR BGRA_BLACK
-    LOCATE 4, 7 + (14 - LEN(text) \ 2)
-    PRINT text;
+    DIM text AS STRING: text = LEFT$(TuneTitle, TITLE_CHARS)
 
-    DIM minute AS _UNSIGNED LONG: minute = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime / 60)
-    DIM second AS _UNSIGNED LONG: second = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime MOD 60)
+    COLOR BGRA_BLACK
+    _PRINTSTRING (TITLE_X + (TITLE_WIDTH - _PRINTWIDTH(text)) \ 2, TITLE_Y), text
+
+    DIM ctm AS _UNSIGNED LONG: ctm = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime / 60)
+    DIM cts AS _UNSIGNED LONG: cts = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime MOD 60)
+    DIM ttm AS _UNSIGNED LONG: ttm = _CAST(_UNSIGNED LONG, MIDI_GetTotalTime / 60)
+    DIM tts AS _UNSIGNED LONG: tts = _CAST(_UNSIGNED LONG, MIDI_GetTotalTime MOD 60)
+
     COLOR BGRA_WHITE
-    LOCATE 7, 18
-    PRINT RIGHT$("00" + LTRIM$(STR$(minute)), 3); ":"; RIGHT$("00" + LTRIM$(STR$(second)), 2);
+    _PRINTSTRING (TIME_X, TIME_Y), String_FormatLong(ctm, "%02u:") + String_FormatLong(cts, "%02u / ") + String_FormatLong(ttm, "%02u:") + String_FormatLong(tts, "%02u")
 
-    _FONT 16
     COLOR BGRA_BLACK
-    LOCATE 9, 19
-    PRINT String_FormatDouble(MIDI_GetVolume * 100#, "%3.0f%%");
+    _PRINTSTRING (VOLUME_TEXT_X, VOLUME_TEXT_Y), String_FormatLong(_CAST(_UNSIGNED LONG, MIDI_GetVolume * 100#), "%3u%%")
 
-    _FONT 8
-    LOCATE 14, 20
     IF MIDI_IsPaused THEN
         COLOR BGRA_ORANGERED
-        PRINT STRING$(2, 179);
+        _PRINTSTRING (PLAY_ICON_X - 4, PLAY_ICON_Y), STRING$(2, 179)
     ELSE
         COLOR BGRA_YELLOW
-        PRINT STRING$(2, 16);
+        _PRINTSTRING (PLAY_ICON_X, PLAY_ICON_Y), CHR$(16)
     END IF
 
     WidgetDisabled UI.cmdPlayPause, LEN(TuneTitle) = 0
@@ -339,7 +374,7 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     OnPlayMIDITune = EVENT_PLAY ' default event is to play next song
 
     IF NOT MIDI_PlayFromFile(fileName) THEN ' We want the MIDI file to loop just once
-        _MESSAGEBOX APP_NAME, "Failed to load: " + fileName, "error"
+        _MESSAGEBOX APP_NAME, "Failed to load: " + fileName + STRING$(2, _CHR_LF) + "Reason: " + MIDI_GetErrorMessage, "error"
         EXIT FUNCTION
     END IF
 
