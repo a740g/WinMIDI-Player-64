@@ -43,10 +43,10 @@ CONST FRAME_BORDER_WIDTH_X& = 48&
 CONST FRAME_BORDER_WIDTH_Y& = 64&
 
 CONST BUTTON_FONT& = 14&
-CONST BUTTON_WIDTH& = 96&
+CONST BUTTON_WIDTH& = 78&
 CONST BUTTON_HEIGHT& = 32&
 CONST BUTTON_GAP& = 8&
-CONST BUTTON_COUNT& = 5&
+CONST BUTTON_COUNT& = 6&
 CONST BUTTON_X& = SCREEN_WIDTH \ 2& - (BUTTON_WIDTH * BUTTON_COUNT + BUTTON_GAP * (BUTTON_COUNT - 1)) \ 2&
 CONST BUTTON_Y& = SCREEN_HEIGHT - (FRAME_BORDER_WIDTH_X + BUTTON_HEIGHT) \ 2&
 
@@ -105,16 +105,26 @@ TYPE UIType ' bunch of UI widgets to change stuff
     cmdIncVolume AS LONG ' increase volume button
     cmdDecVolume AS LONG ' decrease volume button
     cmdRepeat AS LONG ' repeat enable / disable button
+    cmdPort AS LONG ' select MIDI port button
     cmdAbout AS LONG ' shows an about dialog
+END TYPE
+
+TYPE PlaySessionInfoType
+    tuneTitle AS STRING ' song name
+    mm AS _UNSIGNED LONG ' total minutes
+    ss AS _UNSIGNED LONG ' total seconds
+    format AS STRING ' file format
+    port AS _UNSIGNED LONG ' port number being used
+    portName AS STRING ' port name being used
 END TYPE
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' GLOBAL VARIABLES
 '-----------------------------------------------------------------------------------------------------------------------
-DIM SHARED TuneTitle AS STRING '  tune title
 DIM SHARED BackgroundImage AS LONG ' the CC image that we will use for the background
 DIM SHARED UI AS UIType ' user interface controls
+DIM SHARED PlaySessionInfo AS PlaySessionInfoType ' info that remains constant for a single playback session
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------
@@ -216,18 +226,23 @@ SUB DrawScreen
     DrawReels
     DrawFrame
 
-    DIM text AS STRING: text = LEFT$(TuneTitle, TITLE_CHARS)
+    DIM AS _UNSIGNED LONG ctm, cts
 
-    COLOR BGRA_BLACK
-    _PRINTSTRING (TITLE_X + (TITLE_WIDTH - _PRINTWIDTH(text)) \ 2, TITLE_Y), text
+    IF LEN(PlaySessionInfo.tuneTitle) THEN
+        DIM text AS STRING: text = LEFT$(PlaySessionInfo.tuneTitle, TITLE_CHARS)
 
-    DIM ctm AS _UNSIGNED LONG: ctm = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime / 60)
-    DIM cts AS _UNSIGNED LONG: cts = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime MOD 60)
-    DIM ttm AS _UNSIGNED LONG: ttm = _CAST(_UNSIGNED LONG, MIDI_GetTotalTime / 60)
-    DIM tts AS _UNSIGNED LONG: tts = _CAST(_UNSIGNED LONG, MIDI_GetTotalTime MOD 60)
+        COLOR BGRA_BLACK
+        _PRINTSTRING (TITLE_X + (TITLE_WIDTH - _PRINTWIDTH(text)) \ 2, TITLE_Y), text
+
+        text = LEFT$(PlaySessionInfo.format + " " + CHR$(179) + " " + PlaySessionInfo.portName + " (" + _TOSTR$(PlaySessionInfo.port, 0) + ")", TITLE_CHARS)
+        _PRINTSTRING (TITLE_X + (TITLE_WIDTH - _PRINTWIDTH(text)) \ 2, TITLE_Y + BUTTON_FONT), text
+
+        ctm = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime / 60)
+        cts = _CAST(_UNSIGNED LONG, MIDI_GetCurrentTime MOD 60)
+    END IF
 
     COLOR BGRA_WHITE
-    _PRINTSTRING (TIME_X, TIME_Y), String_FormatLong(ctm, "%02u:") + String_FormatLong(cts, "%02u / ") + String_FormatLong(ttm, "%02u:") + String_FormatLong(tts, "%02u")
+    _PRINTSTRING (TIME_X, TIME_Y), String_FormatLong(ctm, "%02u:") + String_FormatLong(cts, "%02u / ") + String_FormatLong(PlaySessionInfo.mm, "%02u:") + String_FormatLong(PlaySessionInfo.ss, "%02u")
 
     COLOR BGRA_BLACK
     _PRINTSTRING (VOLUME_TEXT_X, VOLUME_TEXT_Y), String_FormatLong(_CAST(_UNSIGNED LONG, MIDI_GetVolume * 100#), "%3u%%")
@@ -240,10 +255,11 @@ SUB DrawScreen
         _PRINTSTRING (PLAY_ICON_X, PLAY_ICON_Y), CHR$(16)
     END IF
 
-    WidgetDisabled UI.cmdPlayPause, LEN(TuneTitle) = 0
-    WidgetDisabled UI.cmdNext, LEN(TuneTitle) = 0
-    WidgetDisabled UI.cmdRepeat, LEN(TuneTitle) = 0
-    PushButtonDepressed UI.cmdPlayPause, NOT MIDI_IsPaused _ANDALSO LEN(TuneTitle) <> 0
+    WidgetDisabled UI.cmdPlayPause, LEN(PlaySessionInfo.tuneTitle) = 0
+    WidgetDisabled UI.cmdNext, LEN(PlaySessionInfo.tuneTitle) = 0
+    WidgetDisabled UI.cmdRepeat, LEN(PlaySessionInfo.tuneTitle) = 0
+    WidgetDisabled UI.cmdPort, LEN(PlaySessionInfo.tuneTitle) <> 0
+    PushButtonDepressed UI.cmdPlayPause, NOT MIDI_IsPaused _ANDALSO LEN(PlaySessionInfo.tuneTitle) <> 0
     PushButtonDepressed UI.cmdRepeat, MIDI_IsLooping
 
     WidgetUpdate ' draw widgets above everything else. This also fetches input
@@ -337,9 +353,15 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     END IF
 
     ' Set the app title to display the file name
-    TuneTitle = Pathname_GetFileName(fileName)
-    _TITLE TuneTitle + " - " + APP_NAME ' show complete filename in the title
-    TuneTitle = LEFT$(TuneTitle, LEN(TuneTitle) - LEN(Pathname_GetFileExtension(TuneTitle))) ' get the file name without the extension
+    PlaySessionInfo.tuneTitle = Pathname_GetFileName(fileName)
+    _TITLE PlaySessionInfo.tuneTitle + " - " + APP_NAME ' show complete filename in the title
+    PlaySessionInfo.tuneTitle = LEFT$(PlaySessionInfo.tuneTitle, LEN(PlaySessionInfo.tuneTitle) - LEN(Pathname_GetFileExtension(PlaySessionInfo.tuneTitle))) ' get the file name without the extension
+    ' Get other play session info
+    PlaySessionInfo.mm = _CAST(_UNSIGNED LONG, MIDI_GetTotalTime / 60)
+    PlaySessionInfo.ss = _CAST(_UNSIGNED LONG, MIDI_GetTotalTime MOD 60)
+    PlaySessionInfo.format = MIDI_GetFormat
+    PlaySessionInfo.port = MIDI_GetPort
+    PlaySessionInfo.portName = MIDI_GetPortName(MIDI_GetPort)
 
     DO
         DrawScreen
@@ -383,7 +405,12 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     MIDI_Stop
 
     ' Clear these so that we do not keep showing dead info
-    TuneTitle = _STR_EMPTY
+    PlaySessionInfo.tuneTitle = _STR_EMPTY
+    PlaySessionInfo.mm = 0
+    PlaySessionInfo.ss = 0
+    PlaySessionInfo.format = _STR_EMPTY
+    PlaySessionInfo.port = 0
+    PlaySessionInfo.portName = _STR_EMPTY
 
     _TITLE APP_NAME ' set app title to the way it was
 END FUNCTION
@@ -438,6 +465,10 @@ FUNCTION OnWelcomeScreen%%
         ELSEIF WidgetClicked(UI.cmdAbout) THEN
             ShowAboutDialog
 
+        ELSEIF WidgetClicked(UI.cmdPort) THEN
+            IF MIDI_SetPort(VAL(_INPUTBOX$(APP_NAME, "Current port is" + STR$(MIDI_GetPort) + ": " + MIDI_GetPortName(MIDI_GetPort) + _CHR_LF + _CHR_LF + "Enter new port number (0 to" + STR$(MIDI_GetPortCount - 1) + "):", _TOSTR$(MIDI_GetPort, 0)))) THEN
+                _MESSAGEBOX APP_NAME, "Port set to" + STR$(MIDI_GetPort) + ": " + MIDI_GetPortName(MIDI_GetPort), "information"
+            END IF
         END IF
 
         _LIMIT FRAME_RATE_MAX
@@ -854,7 +885,7 @@ SUB InitProgram
     _FONT BUTTON_FONT
 
     ' Decode, decompress, and load the background from memory to an image
-    BackgroundImage = _LOADIMAGE(Base64_LoadResourceString(DATA_COMPACTCASSETTE_PNG_BI_42837, SIZE_COMPACTCASSETTE_PNG_BI_42837, COMP_COMPACTCASSETTE_PNG_BI_42837), 33, "memory, hq2xb")
+    BackgroundImage = _LOADIMAGE(Base64_LoadResourceString(DATA_COMPACTCASSETTE_PNG_BI_42837, SIZE_COMPACTCASSETTE_PNG_BI_42837, COMP_COMPACTCASSETTE_PNG_BI_42837), 33, "memory, sxbr2")
 
     DIM buttonX AS LONG: buttonX = BUTTON_X ' this is where we will start
     UI.cmdOpen = PushButtonNew("Open", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
@@ -864,6 +895,8 @@ SUB InitProgram
     UI.cmdNext = PushButtonNew("Next", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
     UI.cmdRepeat = PushButtonNew("Loop", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _TRUE)
+    buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
+    UI.cmdPort = PushButtonNew("Port", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
     buttonX = buttonX + BUTTON_WIDTH + BUTTON_GAP
     UI.cmdAbout = PushButtonNew("About", buttonX, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, _FALSE)
     UI.cmdDecVolume = PushButtonNew("-V", BUTTON_VOLUME_M_X, BUTTON_VOLUME_Y, BUTTON_HEIGHT, BUTTON_HEIGHT, _FALSE)
