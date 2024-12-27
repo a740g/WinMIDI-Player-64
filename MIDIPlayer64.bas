@@ -362,6 +362,7 @@ FUNCTION OnPlayMIDITune%% (fileName AS STRING)
     PlaySessionInfo.format = MIDI_GetFormat
     PlaySessionInfo.port = MIDI_GetPort
     PlaySessionInfo.portName = MIDI_GetPortName(MIDI_GetPort)
+    IF LEN(PlaySessionInfo.portName) = 0 THEN PlaySessionInfo.portName = "Virtual"
 
     DO
         DrawScreen
@@ -466,8 +467,16 @@ FUNCTION OnWelcomeScreen%%
             ShowAboutDialog
 
         ELSEIF WidgetClicked(UI.cmdPort) THEN
-            IF MIDI_SetPort(VAL(_INPUTBOX$(APP_NAME, "Current port is" + STR$(MIDI_GetPort) + ": " + MIDI_GetPortName(MIDI_GetPort) + _CHR_LF + _CHR_LF + "Enter new port number (0 to" + STR$(MIDI_GetPortCount - 1) + "):", _TOSTR$(MIDI_GetPort, 0)))) THEN
-                _MESSAGEBOX APP_NAME, "Port set to" + STR$(MIDI_GetPort) + ": " + MIDI_GetPortName(MIDI_GetPort), "information"
+            DIM ports AS _UNSIGNED LONG: ports = MIDI_GetPortCount
+
+            IF ports THEN
+                IF MIDI_SetPort(VAL(_INPUTBOX$(APP_NAME, "Current port is" + STR$(MIDI_GetPort) + ": " + MIDI_GetPortName(MIDI_GetPort) + _CHR_LF + _CHR_LF + "Enter new port number (0 to" + STR$(ports - 1) + "):", _TOSTR$(MIDI_GetPort, 0)))) THEN
+                    _MESSAGEBOX APP_NAME, "Port set to" + STR$(MIDI_GetPort) + ": " + MIDI_GetPortName(MIDI_GetPort), "information"
+                ELSE
+                    _MESSAGEBOX APP_NAME, "Failed to set MIDI port!", "error"
+                END IF
+            ELSE
+                _MESSAGEBOX APP_NAME, "No MIDI port detected!", "warning"
             END IF
         END IF
 

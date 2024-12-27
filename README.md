@@ -39,21 +39,27 @@ To use the library in your project, add the [Toolbox64](https://github.com/a740g
 The library provides the following functions and subroutines:
 
 ```VB
-Function MIDI_PlayFromMemory%% (buffer As String)
-Sub MIDI_PlayFromMemory (buffer As String)
-Function MIDI_PlayFromFile%% (fileName As String)
-Sub MIDI_PlayFromFile (fileName As String)
-Sub MIDI_Stop
-Function MIDI_IsPlaying%%
-Sub MIDI_Loop (loops As Long)
-Function MIDI_IsLooping%%
-Sub MIDI_Pause (pause As Byte)
-Function MIDI_IsPaused%%
-Sub MIDI_SetVolume (volume As Single)
-Function MIDI_GetVolume!
-Function MIDI_GetCurrentTime#
-Function MIDI_GetTotalTime#
-Function MIDI_GetErrorMessage$
+FUNCTION MIDI_GetErrorMessage$
+FUNCTION MIDI_GetPortCount~&
+FUNCTION MIDI_GetPortName$ (portIndex AS _UNSIGNED LONG)
+FUNCTION MIDI_SetPort%% (portIndex AS _UNSIGNED LONG)
+FUNCTION MIDI_GetPort~&
+FUNCTION MIDI_PlayFromMemory%% (buffer AS STRING)
+SUB MIDI_PlayFromMemory (buffer AS STRING)
+FUNCTION MIDI_PlayFromFile%% (fileName AS STRING)
+SUB MIDI_PlayFromFile (fileName AS STRING)
+SUB MIDI_Stop
+FUNCTION MIDI_IsPlaying%%
+SUB MIDI_Loop (loops AS LONG)
+FUNCTION MIDI_IsLooping%%
+SUB MIDI_Pause (state AS _BYTE)
+FUNCTION MIDI_IsPaused%%
+FUNCTION MIDI_GetTotalTime#
+FUNCTION MIDI_GetCurrentTime#
+SUB MIDI_SetVolume (volume AS SINGLE)
+FUNCTION MIDI_GetVolume!
+SUB MIDI_SeekToTime (seekTime AS DOUBLE)
+FUNCTION MIDI_GetFormat$
 ```
 
 ## NOTES
